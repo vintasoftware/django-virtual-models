@@ -1,0 +1,50 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.3.0
+    hooks:
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: fix-byte-order-marker
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: debug-statements
+      - id: detect-private-key
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.38.0
+    hooks:
+    - id: pyupgrade
+      args:
+        - --py3-plus
+        - --keep-runtime-typing
+  - repo: https://github.com/myint/autoflake
+    rev: v1.5.3
+    hooks:
+    - id: autoflake
+      args:
+        - --recursive
+        - --in-place
+        - --remove-all-unused-imports
+        - --remove-duplicate-keys
+        - --exclude
+        - __init__.py,migrations/*
+  - repo: https://github.com/pycqa/isort
+    rev: "5.10.1"
+    hooks:
+      - id: isort
+        name: isort (python)
+  - repo: https://github.com/psf/black
+    rev: "22.8.0"
+    hooks:
+      - id: black
+  - repo: https://github.com/PyCQA/bandit
+    rev: "1.7.4"
+    hooks:
+      - id: bandit
+        args: ["-c", "pyproject.toml"]
+        additional_dependencies: [ "bandit[toml]" ]

@@ -1,0 +1,124 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "django-virtual-models"
+description = "..."
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+authors = [
+    { name = "Flávio Juvenal (Vinta Software)", email = "flavio@vinta.com.br" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+dependencies = [
+    "django >=3.2",
+    "djangorestframework >=3.13.1",
+    "typing-extensions >=4.3.0",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/vintasoftware/django-virtual-models"
+Documentation = "https://readthedocs.org/projects/django-virtual-models/"
+
+[project.optional-dependencies]
+doc = [
+    "sphinx-rtd-theme ==1.0.0",
+    "Sphinx ==5.1.1",
+    "watchdog ==2.1.9",
+]
+dev = [
+    "pytest >=7.1.3,<8.0.0",
+    "pytest-cov[toml] >=3.0.0,<4.0.0",
+    "pytest-django >=4.5.2,<5.0.0",
+    "psycopg2 >=2.9.3,<3.0.0",
+    "mypy ==0.971",
+    "autoflake >=1.5.3,<2.0.0",
+    "flake8 >=5.0.4,<6.0.0",
+    "black ==22.8.0",
+    "isort >=5.10.1,<6.0.0",
+    "pre-commit >=2.20.0,<3.0.0",
+    "bump2version ==1.0.1",
+    "tox >=3.26.0,<4.0.0",
+    "model_bakery >=1.7.0,<2.0.0",
+]
+
+[tool.hatch.version]
+path = "django_virtual_models/__init__.py"
+
+[tool.black]
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+)
+'''
+include = '\.pyi?$'
+line-length = 100
+target-version = ['py38']
+
+[tool.isort]
+profile = 'black'
+known_django = 'django'
+known_drf = 'rest_framework'
+line_length = 100
+sections = ['FUTURE', 'STDLIB', 'DJANGO', 'DRF', 'THIRDPARTY', 'FIRSTPARTY', 'LOCALFOLDER']
+skip = ['./venv', './env,migrations']
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+
+[tool.pytest.ini_options]
+addopts = [
+  "--strict-config",
+  "--strict-markers",
+]
+xfail_strict = true
+junit_family = "xunit2"
+filterwarnings = [
+    "ignore::django.utils.deprecation.RemovedInDjango50Warning",
+]
+
+[tool.coverage.run]
+branch = true
+omit = ["tests/*"]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    'pragma: no cover',
+
+    # Don't complain if tests don't hit defensive assertion code:
+    'raise AssertionError',
+    'raise NotImplementedError',
+
+    # Don't complain if non-runnable code isn't run:
+    'if 0:',
+    'if __name__ == .__main__.:',
+
+    # Don't complain about abstract methods, they aren't run:
+    '@(abc\.)?abstractmethod',
+]
