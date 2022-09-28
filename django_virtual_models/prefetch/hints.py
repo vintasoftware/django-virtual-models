@@ -17,14 +17,14 @@ def _block_queries(decorated_func):
     )
 
 
-def _wrap_func_blocking_queries(decorated_func, is_active, extra_args=None):
+def _wrap_func_blocking_queries(decorated_func, is_active_fn, extra_args=None):
     if not extra_args:
         extra_args = []
 
     @functools.wraps(decorated_func)
     def wrapper(*args, **kwargs):
         try:
-            if is_active:
+            if is_active_fn():
                 with _block_queries(decorated_func):
                     return decorated_func(*args, *extra_args, **kwargs)
             else:
@@ -56,7 +56,7 @@ class OnOffDecorator:
     def __call__(self, decorated_func):
         wrapper = _wrap_func_blocking_queries(
             decorated_func,
-            is_active=self.is_active,
+            is_active_fn=lambda: self.is_active,
         )
         wrapper._decorator_instance = self
         return wrapper
@@ -75,7 +75,7 @@ class from_types_of(OnOffDecorator):  # noqa: N801
     def __call__(self, decorated_func):
         wrapper = _wrap_func_blocking_queries(
             decorated_func,
-            is_active=self.is_active,
+            is_active_fn=lambda: self.is_active,
             extra_args=[self.typed_func],
         )
         wrapper._decorator_instance = self
@@ -101,7 +101,7 @@ class from_serializer(OnOffDecorator):  # noqa: N801
             extra_args = [self.serializer_cls]
         wrapper = _wrap_func_blocking_queries(
             decorated_func,
-            is_active=self.is_active,
+            is_active_fn=lambda: self.is_active,
             extra_args=extra_args,
         )
         wrapper._decorator_instance = self

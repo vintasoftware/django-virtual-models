@@ -1,7 +1,9 @@
+import os
+
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import F
 from django.template.defaultfilters import slugify
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from rest_framework import serializers
 
@@ -10,6 +12,7 @@ from typing_extensions import Annotated
 
 import django_virtual_models as v
 from django_virtual_models import prefetch
+from django_virtual_models.exceptions import MissingHintsException
 from django_virtual_models.prefetch.serializer_optimization import LookupFinder
 
 from ..virtual_models.models import Assignment, CompletedLesson, Course, Facilitator, Lesson, User
@@ -71,7 +74,7 @@ class NestedUserAssignmentSerializer(NestedAssignmentSerializer):
 
 
 def get_lesson_title_list(course: Annotated[Course, prefetch.Required("lessons")]):
-    lessons = list(course.completed_lessons.all())
+    lessons = list(course.lessons.all())
     lessons.sort(key=lambda lesson: lesson.created)
     return [lesson.title for lesson in lessons]
 
@@ -82,8 +85,8 @@ class CourseSerializer(serializers.ModelSerializer):
     creator_email = serializers.EmailField(source="created_by.email")
     facilitator_emails = serializers.SerializerMethodField()
     facilitator_domains = serializers.SerializerMethodField()
-    user_assignment = NestedUserAssignmentSerializer()
-    assignments = NestedAssignmentSerializer()
+    user_assignment = serializers.SerializerMethodField()
+    assignments = NestedAssignmentSerializer(many=True)
     lesson_ids = serializers.PrimaryKeyRelatedField(source="lessons", read_only=True, many=True)
     lesson_titles = serializers.SerializerMethodField()
 
@@ -127,6 +130,12 @@ class CourseSerializer(serializers.ModelSerializer):
 
         # this won't run because it's defined on virtual model,
         # but one could add fallback code here:
+        return None
+
+    @prefetch.hints.from_serializer(NestedUserAssignmentSerializer)
+    def get_user_assignment(self, obj, serializer_cls):
+        if getattr(obj, "user_assignment", None):
+            return serializer_cls(obj.user_assignment[0]).data
         return None
 
     @prefetch.hints.from_types_of(get_lesson_title_list, "course")
@@ -192,6 +201,7 @@ class LookupFinderTests(TestCase):
                 "facilitator_emails",
                 "lessons",
                 "name",
+                "description",
                 "user_assignment",
                 "user_assignment__completed_lessons",
                 "user_assignment__course",
@@ -274,6 +284,7 @@ class LookupFinderTests(TestCase):
         assert sorted(lookup_list) == sorted(
             [
                 "name",
+                "description",
                 "created_by",
                 "created_by__email",
                 "facilitator_emails",
@@ -320,3 +331,46 @@ class LookupFinderTests(TestCase):
         ).recursively_find_lookup_list()
 
         assert sorted(lookup_list) == sorted(["created_by", "created_by__email"])
+
+    @override_settings(DEBUG=True)
+    def test_prefetch_hints_block_queries_on_serializer_evaluation(self):
+        class BrokenCourseSerializer(CourseSerializer):
+            @prefetch.hints.from_types_of(get_lesson_title_list, "course")
+            def get_lesson_titles(self, course, get_lesson_title_list_helper):
+                list(course.lessons.order_by("title"))  # new query
+
+        qs = Course.objects.all()
+        serializer_instance = BrokenCourseSerializer(instance=qs, many=True)
+        virtual_model = VirtualCourse()
+
+        lookup_list = LookupFinder(
+            serializer_instance=serializer_instance,
+            virtual_model=virtual_model,
+        ).recursively_find_lookup_list()
+        optimized_qs = virtual_model.get_optimized_queryset(qs=qs, lookup_list=lookup_list)
+        with self.assertRaises(MissingHintsException) as ctx:
+            BrokenCourseSerializer(optimized_qs, many=True).data
+
+        assert "Unexpected query happened inside" in str(ctx.exception)
+        assert "BrokenCourseSerializer.get_lesson_titles" in str(ctx.exception)
+        assert os.path.basename(__file__) in str(ctx.exception)
+
+    @override_settings(DEBUG=True)
+    def test_prefetch_hints_does_not_block_queries_if_false(self):
+        class BrokenCourseSerializer(CourseSerializer):
+            @prefetch.hints.from_types_of(get_lesson_title_list, "course")
+            def get_lesson_titles(self, course, get_lesson_title_list_helper):
+                list(course.lessons.order_by("title"))  # new query
+
+        qs = Course.objects.all()
+        serializer_instance = BrokenCourseSerializer(instance=qs, many=True)
+        virtual_model = VirtualCourse()
+
+        lookup_list = LookupFinder(
+            serializer_instance=serializer_instance,
+            virtual_model=virtual_model,
+            block_queries=False,
+        ).recursively_find_lookup_list()
+        optimized_qs = virtual_model.get_optimized_queryset(qs=qs, lookup_list=lookup_list)
+        with self.assertNumQueries(6):
+            BrokenCourseSerializer(optimized_qs, many=True).data

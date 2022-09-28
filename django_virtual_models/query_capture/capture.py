@@ -77,7 +77,7 @@ class native_query_capture(ContextDecorator):  # noqa: N801
         Returns:
             Returns the result of the exit for the basic operation of `connection.execute_wrapper`.
         """
-        if settings.DEBUG or settings.IS_TEST:
+        if settings.DEBUG:
             # only calculate stack in DEBUG or TEST mode, to avoid production impact
             python_library_directory = get_python_lib()
             stack = [

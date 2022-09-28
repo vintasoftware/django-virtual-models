@@ -57,9 +57,8 @@ class Course(TimeStampedModel):
     def name_title_case(self):
         return self.name.title()
 
-    @property  # property must come before
-    @prefetch.hints.no_deferred_fields()
-    def description_first_line(self):
+    @property
+    def description_first_line(self: Annotated[Course, prefetch.hints.Required("description")]):
         try:
             return self.description.splitlines()[0]
         except IndexError:
