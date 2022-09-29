@@ -24,7 +24,7 @@ class QueryCountExceededException(Exception):
         self.extra_queries = extra_queries
         self.extra_queries_pretty_str = self._prettify_extra_queries(self.extra_queries)
         message_lines = [
-            f"Possible N+1 problem on {affected_cls_or_fn_name or ''}",
+            f"Possible N+1 problem {('on ' + affected_cls_or_fn_name) or ''}",
             (
                 f"Exceeded expected queries, expected={self.expected_query_count}, "
                 f"actual={self.actual_query_count}, "
