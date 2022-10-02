@@ -69,7 +69,7 @@ this is how you set up your fork for local development::
 
 4. Install the project and the dev requirements::
 
-    $ pip install -e .[doc,dev]
+    $ pip install -e .[doc,dev,test]
 
 5. Install pre-commit checks::
 
@@ -81,25 +81,19 @@ this is how you set up your fork for local development::
 
    Now you can make your changes locally.
 
-7. Before testing your changes, you'll need to set up Postgres on your localhost and
-create a DB for tests named ``django_virtual_models`` as expected by ``tests/conftest.py``.
-If your system supports, you can create that DB from your shell::
-
-    $ createdb django_virtual_models
-
-8. When you're done making changes, check that your changes pass tests,
+7. When you're done making changes, check that your changes pass tests,
 including testing other Python and Django versions with tox::
 
     $ pytest
     $ tox
 
-9. Commit your changes and push your branch to GitHub::
+8. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-10. Submit a Pull Request through the GitHub website.
+9. Submit a Pull Request through the GitHub website.
 
 Pull Request Guidelines
 -----------------------

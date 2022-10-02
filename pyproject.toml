@@ -1,13 +1,18 @@
+[tool.setuptools]
+packages = ["django_virtual_models"]
+
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = [
+    "setuptools >= 65.4.1",
+]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-virtual-models"
 description = "..."
 readme = "README.md"
 requires-python = ">=3.8"
-license = "MIT"
+license = {file = "LICENSE"}
 authors = [
     { name = "Flávio Juvenal (Vinta Software)", email = "flavio@vinta.com.br" },
 ]
@@ -36,14 +41,10 @@ Documentation = "https://readthedocs.org/projects/django-virtual-models/"
 [project.optional-dependencies]
 doc = [
     "sphinx-rtd-theme ==1.0.0",
-    "Sphinx ==5.1.1",
+    "Sphinx ==5.2.3",
     "watchdog ==2.1.9",
 ]
 dev = [
-    "pytest >=7.1.3,<8.0.0",
-    "pytest-cov[toml] >=3.0.0,<4.0.0",
-    "pytest-django >=4.5.2,<5.0.0",
-    "psycopg2 >=2.9.3,<3.0.0",
     "mypy ==0.971",
     "autoflake >=1.5.3,<2.0.0",
     "flake8 >=5.0.4,<6.0.0",
@@ -51,12 +52,14 @@ dev = [
     "isort >=5.10.1,<6.0.0",
     "pre-commit >=2.20.0,<3.0.0",
     "bump2version ==1.0.1",
+]
+test = [
+    "pytest >=7.1.3,<8.0.0",
+    "pytest-cov[toml] >=3.0.0,<4.0.0",
+    "pytest-django >=4.5.2,<5.0.0",
     "tox >=3.26.0,<4.0.0",
     "model_bakery >=1.7.0,<2.0.0",
 ]
-
-[tool.hatch.version]
-path = "django_virtual_models/__init__.py"
 
 [tool.black]
 exclude = '''
@@ -97,9 +100,40 @@ addopts = [
 ]
 xfail_strict = true
 junit_family = "xunit2"
-filterwarnings = [
-    "ignore::django.utils.deprecation.RemovedInDjango50Warning",
-]
+# filterwarnings = [
+#     "ignore::django.utils.deprecation.RemovedInDjango50Warning",
+# ]
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = {linux}-py{38,39,310}-django{32,40,41}
+isolated_build = True
+
+[gh-actions]
+python =
+    3.8: py38
+    3.9: py39
+    3.10: py310
+
+[gh-actions:env]
+OS =
+    ubuntu-latest: linux
+DJANGO =
+    3.2: django32
+    4.0: django40
+    4.1: django41
+
+[testenv]
+deps =
+    django32: django~=3.2
+    django40: django~=4.0
+    django41: django~=4.1
+    .[test]
+commands =
+    coverage run -m pytest --basetemp={envtmpdir}
+    coverage xml
+"""
 
 [tool.coverage.run]
 branch = true

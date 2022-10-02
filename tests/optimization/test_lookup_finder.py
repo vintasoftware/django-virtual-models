@@ -1,6 +1,5 @@
 import os
 
-from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import F
 from django.template.defaultfilters import slugify
 from django.test import TestCase, override_settings
@@ -16,7 +15,15 @@ from django_virtual_models import prefetch
 from django_virtual_models.exceptions import MissingHintsException
 from django_virtual_models.prefetch.serializer_optimization import LookupFinder
 
-from ..virtual_models.models import Assignment, CompletedLesson, Course, Facilitator, Lesson, User
+from ..virtual_models.models import (
+    Assignment,
+    CompletedLesson,
+    Course,
+    Facilitator,
+    Lesson,
+    SQArrayAgg,
+    User,
+)
 
 
 class NestedAssignment(v.VirtualModel):
@@ -38,7 +45,7 @@ class NestedUserAssignment(NestedAssignment):
 
 class VirtualCourse(v.VirtualModel):
     created_by = v.NestedJoin(model_cls=User)
-    facilitator_emails = v.Expression(ArrayAgg(F("facilitators__email"), ordering="created"))
+    facilitator_emails = v.Expression(SQArrayAgg(F("facilitators__email")))
     user_assignment = NestedUserAssignment(
         manager=Assignment.objects, lookup="assignments", to_attr="user_assignment"
     )

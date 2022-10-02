@@ -1,11 +1,25 @@
 from __future__ import annotations
 
 from django.db import models
-from django.db.models import OuterRef
+from django.db.models import Aggregate, OuterRef
 
 from typing_extensions import Annotated
 
 from django_virtual_models import prefetch
+
+
+class SQArrayAgg(Aggregate):
+    function = "JSON_GROUP_ARRAY"
+    allow_distinct = True
+
+    @property
+    def output_field(self):
+        return models.JSONField(self.source_expressions[0].output_field)
+
+    def convert_value(self, value, expression, connection):
+        if not value:
+            return []
+        return value
 
 
 class SQCount(models.Subquery):

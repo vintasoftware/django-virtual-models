@@ -1,7 +1,6 @@
 from datetime import datetime
 from unittest.mock import MagicMock
 
-from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import F
 from django.db.models.functions import ExtractYear, Substr
 from django.test import TestCase
@@ -11,7 +10,16 @@ from model_bakery import baker
 import django_virtual_models as v
 
 from . import db_utils
-from .models import Assignment, CompletedLesson, Course, Facilitator, Lesson, LiveCourse, User
+from .models import (
+    Assignment,
+    CompletedLesson,
+    Course,
+    Facilitator,
+    Lesson,
+    LiveCourse,
+    SQArrayAgg,
+    User,
+)
 
 
 class NestedUserAssignment(v.VirtualModel):
@@ -30,7 +38,7 @@ class NestedUserAssignment(v.VirtualModel):
 class VirtualCourse(v.VirtualModel):
     small_description = v.Expression(Substr("description", 1, 128))
     created_by = v.NestedJoin(model_cls=User)
-    facilitator_emails = v.Expression(ArrayAgg(F("facilitators__email"), ordering="created"))
+    facilitator_emails = v.Expression(SQArrayAgg(F("facilitators__email")))
     user_assignment = NestedUserAssignment(
         manager=Assignment.objects, lookup="assignments", to_attr="user_assignment"
     )
@@ -211,9 +219,9 @@ class VirtualModelsTest(TestCase):
         for course, expected_course in zip(course_list, self.courses):
             assert course.small_description == expected_course.description[:128]
             assert course.created_by == expected_course.created_by
-            assert course.facilitator_emails == [
-                f.user.email for f in self.course_to_related[course]["facilitators"]
-            ]
+            assert sorted(course.facilitator_emails) == sorted(
+                [f.user.email for f in self.course_to_related[course]["facilitators"]]
+            )
             assert course.user_assignment[0] == self.course_to_related[course]["user_assignment"]
             assert list(course.assignments.all()) == self.course_to_related[course]["assignments"]
 
