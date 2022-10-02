@@ -7,6 +7,7 @@ from django.test import TestCase, override_settings
 
 from rest_framework import serializers
 
+import pytest
 from model_bakery import baker
 from typing_extensions import Annotated
 
@@ -374,3 +375,34 @@ class LookupFinderTests(TestCase):
         optimized_qs = virtual_model.get_optimized_queryset(qs=qs, lookup_list=lookup_list)
         with self.assertNumQueries(6):
             BrokenCourseSerializer(optimized_qs, many=True).data
+
+    @override_settings(DEBUG=True)
+    @pytest.mark.skip(reason="Not supported yet")
+    def test_annotated_blocks_queries_on_serializer_evaluation(self):
+        class BrokenCourseSerializer(serializers.ModelSerializer):
+            created_by_email = serializers.SerializerMethodField()
+
+            class Meta:
+                model = Course
+                virtual_model = VirtualCourse
+                fields = ["created_by_email"]
+
+            def get_created_by_email(
+                self,
+                # should have Annotated[Course, prefetch.Required("created_by")]:
+                course: Annotated[Course, prefetch.Required("description")],
+            ):
+                return course.created_by.email
+
+        qs = Course.objects.all()
+        serializer_instance = BrokenCourseSerializer(instance=qs, many=True)
+        virtual_model = VirtualCourse()
+
+        lookup_list = LookupFinder(
+            serializer_instance=serializer_instance,
+            virtual_model=virtual_model,
+        ).recursively_find_lookup_list()
+        optimized_qs = virtual_model.get_optimized_queryset(qs=qs, lookup_list=lookup_list)
+        ls = list(optimized_qs)
+        with self.assertRaises(MissingHintsException) as ctx:
+            BrokenCourseSerializer(ls, many=True).data
