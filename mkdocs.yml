@@ -1,0 +1,38 @@
+site_name: django-virtual-models
+site_description: Improve performance and maintainability with a prefetching layer in your Django / Django REST Framework project.
+
+repo_name: vintasoftware/django-virtual-models
+repo_url: https://github.com/vintasoftware/django-virtual-models/
+edit_uri: blob/main/docs/
+
+theme:
+  name: material
+  icon:
+    logo: material/database
+    repo: fontawesome/brands/github
+  favicon: img/favicon.ico
+  palette:
+    primary: deep-purple
+    accent: deep-purple
+
+copyright: <a href="https://www.vinta.com.br">Vinta Software</a>
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      use_pygments: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.snippets:
+      check_paths: true
+  - toc:
+      permalink: true
+  - attr_list
+
+nav:
+  - Introduction: README.md
+  - Installation: installation.md
+  - Tutorial: tutorial.md
+  - Releases:
+      - Changelog: CHANGELOG.md
+      - License: LICENSE.md

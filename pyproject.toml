@@ -7,7 +7,7 @@ name = "django_virtual_models"
 
 [project]
 name = "django-virtual-models"
-description = "Improve performance and maintainability with a prefetching layer in your Django project"
+description = "Improve performance and maintainability with a prefetching layer in your Django / Django REST Framework project"
 readme = "README.md"
 requires-python = ">=3.8"
 keywords = ["django", "prefetch", "performance", "optimization"]
@@ -39,9 +39,7 @@ Documentation = "https://readthedocs.org/projects/django-virtual-models/"
 
 [project.optional-dependencies]
 doc = [
-    "sphinx-rtd-theme ==1.0.0",
-    "Sphinx ==5.2.3",
-    "watchdog ==2.1.9",
+    "mkdocs-material==8.5.6",
 ]
 dev = [
     "mypy ==0.971",
