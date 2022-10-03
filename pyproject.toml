@@ -1,17 +1,16 @@
-[tool.setuptools]
-packages = ["django_virtual_models"]
-
 [build-system]
-requires = [
-    "setuptools >= 65.4.1",
-]
-build-backend = "setuptools.build_meta"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.module]
+name = "django_virtual_models"
 
 [project]
 name = "django-virtual-models"
-description = "..."
+description = "Improve performance and maintainability with a prefetching layer in your Django project"
 readme = "README.md"
 requires-python = ">=3.8"
+keywords = ["django", "prefetch", "performance", "optimization"]
 license = {file = "LICENSE"}
 authors = [
     { name = "Flávio Juvenal (Vinta Software)", email = "flavio@vinta.com.br" },
