@@ -18,6 +18,8 @@ class QueryCountExceededException(Exception):
         actual_query_count,
         extra_queries,
         affected_cls_or_fn_name=None,
+        view_cls_name=None,
+        request=None,
     ):
         self.expected_query_count = expected_query_count
         self.actual_query_count = actual_query_count
@@ -25,6 +27,9 @@ class QueryCountExceededException(Exception):
         self.extra_queries_pretty_str = self._prettify_extra_queries(self.extra_queries)
         message_lines = [
             f"Possible N+1 problem {('on ' + affected_cls_or_fn_name) or ''}",
+            (f"View={view_cls_name}" if view_cls_name else ""),
+            (f"Endpoint={request.path}" if request else ""),
+            (f"Method={request.method}" if request else ""),
             (
                 f"Exceeded expected queries, expected={self.expected_query_count}, "
                 f"actual={self.actual_query_count}, "
@@ -80,6 +85,8 @@ class max_query_count(ContextDecorator):  # noqa
         max_queries=0,
         only_count_select=False,
         affected_cls_or_fn_name=None,
+        view_cls_name=None,
+        request=None,
         only_log=False,
     ):
         self._max_query_count = max_queries
@@ -87,7 +94,23 @@ class max_query_count(ContextDecorator):  # noqa
         self._query_count_before = 0
         self._query_count_after = 0
         self._affected_cls_or_fn_name = affected_cls_or_fn_name
+        self._view_cls_name = view_cls_name
+        self._request = request
         self._only_log = only_log
+
+    @classmethod
+    def for_serializer(cls, serializer_instance, **kwargs):
+        auto_kwargs = dict(
+            affected_cls_or_fn_name=serializer_instance.__class__.__name__,
+            view_cls_name=(
+                serializer_instance.context.get("view").__class__.__name__
+                if serializer_instance.context.get("view")
+                else None
+            ),
+            request=serializer_instance.context.get("request"),
+        )
+        auto_kwargs.update(kwargs)
+        return cls(**auto_kwargs)
 
     def get_queries(self):
         if settings.DEBUG:
@@ -128,6 +151,8 @@ class max_query_count(ContextDecorator):  # noqa
                 actual_query_count=actual_query_count,
                 extra_queries=extra_queries,
                 affected_cls_or_fn_name=self._affected_cls_or_fn_name,
+                request=self._request,
+                view_cls_name=self._view_cls_name,
             )
             if not self._should_raise_exception():
                 logger.warning(exc.message)

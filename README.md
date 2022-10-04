@@ -1,5 +1,8 @@
+<p align="center" style="margin: 0 0 10px">
+  <img width="100" src="img/noun-fourth-dimension-3307281.svg" alt="Django Virtual Models Icon">
+</p>
 <p align="center">
-  Django Virtual Models
+  <strong>Django Virtual Models</strong>
 </p>
 <p align="center">
     <em>Improve performance and maintainability with a prefetching layer in your Django / Django REST Framework project</em>
@@ -34,15 +37,14 @@ For example, imagine if you have following nested serializers starting from `Mov
 ```python
 from movies.models import Nomination, Person, Movie
 
-
 class NestedAwardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Nomination
-        fields = ["name", "year", "is_winner"]
+        fields = ["award", "category", "year", "is_winner"]
 
 class NestedPersonSerializer(serializers.ModelSerializer):
     awards = NestedAwardSerializer(many=True)
-    nomination_count = IntegerField(read_only=True)
+    nomination_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Person
@@ -53,7 +55,8 @@ class MovieSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Movie
-        fields = ["title", "directors"]
+        fields = ["name", "directors"]
+
 ```
 
 Note that for proper performance and functionality, all nested serializers must have a corresponding `prefetch_related` on the queryset used by `MovieSerializer`. Also, the `nomination_count` field should be `annotate`d on it. Therefore, you'll need to write this complex chain of nested prefetches:
@@ -62,6 +65,7 @@ Note that for proper performance and functionality, all nested serializers must 
 from django.db.models import Prefetch
 
 awards_qs = Nomination.objects.filter(is_winner=True)
+
 directors_qs = Person.objects.prefetch_related(
     Prefetch(
         "nominations",
@@ -71,6 +75,7 @@ directors_qs = Person.objects.prefetch_related(
 ).annotate(
     nomination_count=Count("nominations")
 ).distinct()
+
 qs = Movie.objects.prefetch_related(
     Prefetch(
         "directors",
@@ -91,20 +96,22 @@ class VirtualAward(v.VirtualModel):
     def get_prefetch_queryset(self, **kwargs):
         return Nomination.objects.filter(is_winner=True)
 
+
 class VirtualPerson(v.VirtualModel):
     awards = VirtualAward(
         manager=Nomination.objects,
         lookup="nominations",
-        to_attr="awards")
+        to_attr="awards",
+    )
     nomination_count = v.Annotation(
-        lambda qs,
-        **kwargs: qs.annotate(
+        lambda qs, **kwargs: qs.annotate(
             nomination_count=Count("nominations")
         ).distinct()
     )
 
     class Meta:
         model = Person
+
 
 class VirtualMovie(v.VirtualModel):
     directors = VirtualPerson(manager=Person.objects)
@@ -115,12 +122,22 @@ class VirtualMovie(v.VirtualModel):
 qs = VirtualMovie().get_optimized_queryset(Movie.objects.all())
 ```
 
-If, for example, you forget to add the `nomination_count` field on `NestedPersonSerializer`, the following exception will appear when you try to use the `MovieSerializer` serializer (or any serializer that eventually uses the nested `NestedPersonSerializer`):
+If, for example, you forget to add the `nomination_count` field on `VirtualPerson`, the following exception will appear:
 
-... TODO: show exception screenshot here ...
+![MissingVirtualModelFieldException exception](https://user-images.githubusercontent.com/397989/193944879-5205d80b-4102-415e-b178-7630a14db5a1.png)
 
-To configure your serializer to use Virtual Models, just do:
+To configure your view and serializer to use Virtual Models, inherit from the proper classes:
 
-... TODO: show exception screenshot here ...
+```python
+import django_virtual_models as v
 
-Check the [Installation](installation.md) and the [Tutorial](tutorial.md) to learn more.
+class MovieSerializer(v.VirtualModelSerializer):
+    ...
+
+class MovieList(v.VirtualModelListAPIView):
+    queryset = Movie.objects.all()
+    serializer_class = MovieSerializer
+```
+
+To learn more, check the [Installation](installation.md) and the [Tutorial](tutorial.md).
+Or the [example project](https://github.com/vintasoftware/django-virtual-models/tree/main/example).

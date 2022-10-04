@@ -276,7 +276,7 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
         else:
             new_lookup_list = list(lookup_list)
 
-        prefetch_queryset = self.get_prefetch_queryset(user, **kwargs)
+        prefetch_queryset = self.get_prefetch_queryset(user=user, **kwargs)
         prefetch_queryset = self._hydrate_queryset_with_nested_declared_fields(
             qs=prefetch_queryset,
             lookup_list=new_lookup_list,

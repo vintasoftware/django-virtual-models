@@ -1,0 +1,92 @@
+- model: movies.movie
+  pk: 1
+  fields:
+    name: The Matrix
+- model: movies.movie
+  pk: 2
+  fields:
+    name: Drive
+- model: movies.person
+  pk: 1
+  fields:
+    name: Lana Wachowski
+- model: movies.person
+  pk: 2
+  fields:
+    name: Lilly Wachowski
+- model: movies.person
+  pk: 3
+  fields:
+    name: Nicolas Winding Refn
+- model: movies.persondirector
+  pk: 1
+  fields:
+    movie: 1
+    person: 1
+    order: 1
+- model: movies.persondirector
+  pk: 2
+  fields:
+    movie: 1
+    person: 2
+    order: 2
+- model: movies.persondirector
+  pk: 3
+  fields:
+    movie: 2
+    person: 3
+    order: 1
+- model: movies.nomination
+  pk: 1
+  fields:
+    award: Saturn Awards
+    category: Best Director
+    year: 2000
+    person: 1
+    movie: 1
+    is_winner: true
+- model: movies.nomination
+  pk: 2
+  fields:
+    award: Saturn Awards
+    category: Best Director
+    year: 2000
+    person: 2
+    movie: 1
+    is_winner: true
+- model: movies.nomination
+  pk: 3
+  fields:
+    award: Saturn Awards
+    category: Best Writer
+    year: 2000
+    person: 1
+    movie: 1
+    is_winner: false
+- model: movies.nomination
+  pk: 4
+  fields:
+    award: Saturn Awards
+    category: Best Writer
+    year: 2000
+    person: 2
+    movie: 1
+    is_winner: false
+- model: movies.nomination
+  pk: 5
+  fields:
+    award: Cannes Film Festival
+    category: Best Director
+    year: 2011
+    person: 3
+    movie: 2
+    is_winner: true
+- model: movies.nomination
+  pk: 6
+  fields:
+    award: Chicago Film Critics Association
+    category: Best Director
+    year: 2011
+    person: 3
+    movie: 2
+    is_winner: false

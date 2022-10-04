@@ -57,6 +57,10 @@ test = [
     "tox >=3.26.0,<4.0.0",
     "model_bakery >=1.7.0,<2.0.0",
 ]
+example = [
+    "django >= 3.2,<4.0",
+    "pyyaml >= 6.0,<7.0",
+]
 
 [tool.black]
 exclude = '''
@@ -72,6 +76,8 @@ exclude = '''
     | buck-out
     | build
     | dist
+    | settings
+    | migrations
   )/
 )
 '''
@@ -85,10 +91,10 @@ known_django = 'django'
 known_drf = 'rest_framework'
 line_length = 100
 sections = ['FUTURE', 'STDLIB', 'DJANGO', 'DRF', 'THIRDPARTY', 'FIRSTPARTY', 'LOCALFOLDER']
-skip = ['./venv', './env,migrations']
+skip = ['./venv', './env', 'migrations']
 
 [tool.bandit]
-exclude_dirs = ["tests"]
+exclude_dirs = ["tests","settings"]
 
 [tool.pytest.ini_options]
 addopts = [
