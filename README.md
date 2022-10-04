@@ -9,7 +9,7 @@
 </p>
 <p align="center">
 <a href="https://github.com/vintasoftware/django-virtual-models/actions?query=workflow%3ATest+event%3Apush+branch%3Amain" target="_blank">
-    <img src="https://github.com/vintasoftware/django-virtual-models/workflows/Test/badge.svg?event=push&branch=main" alt="Test">
+    <img src="https://github.com/vintasoftware/django-virtual-models/workflows/tests/badge.svg?event=push&branch=main" alt="Test">
 </a>
 <!-- TODO: coverage shield -->
 <a href="https://pypi.org/project/django-virtual-models" target="_blank">
