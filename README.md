@@ -1,5 +1,5 @@
 <p align="center" style="margin: 0 0 10px">
-  <img width="100" src="img/noun-fourth-dimension-3307281.svg" alt="Django Virtual Models Icon">
+  <img width="100" src="https://user-images.githubusercontent.com/397989/193950778-4550eebb-8650-45f8-8f57-d3bbab15e91a.svg" alt="Django Virtual Models Icon">
 </p>
 <p align="center">
   <strong>Django Virtual Models</strong>
