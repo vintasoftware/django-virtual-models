@@ -103,6 +103,9 @@ addopts = [
 ]
 xfail_strict = true
 junit_family = "xunit2"
+testpaths = [
+    "tests",
+]
 # filterwarnings = [
 #     "ignore::django.utils.deprecation.RemovedInDjango50Warning",
 # ]

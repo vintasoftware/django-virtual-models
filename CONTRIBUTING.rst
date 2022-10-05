@@ -85,6 +85,7 @@ this is how you set up your fork for local development::
 including testing other Python and Django versions with tox::
 
     $ pytest
+    $ pytest example
     $ tox
 
 8. Commit your changes and push your branch to GitHub::

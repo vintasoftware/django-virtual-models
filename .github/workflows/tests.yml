@@ -30,12 +30,17 @@ jobs:
     - name: Install tox-gh-actions and coveralls
       run: |
         python -m pip install --upgrade pip
-        pip install tox tox-gh-actions coveralls
+        python -m pip install tox tox-gh-actions coveralls
     - name: Run tests with tox
       env:
         OS: ${{ matrix.os }}
         DJANGO: ${{ matrix.django-version }}
       run: tox
+    - name: Run tests for example
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.8' && matrix.django-version == '3.2' }}
+      run: |
+        python -m pip install .[test,example]
+        python -m pytest example
     - name: Generate coverage.xml
       if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.8' && matrix.django-version == '3.2' }}
       uses: actions/upload-artifact@v3
