@@ -11,7 +11,9 @@
 <a href="https://github.com/vintasoftware/django-virtual-models/actions?query=workflow%3ATest+event%3Apush+branch%3Amain" target="_blank">
     <img src="https://github.com/vintasoftware/django-virtual-models/workflows/tests/badge.svg?event=push&branch=main" alt="Test">
 </a>
-<!-- TODO: coverage shield -->
+<a href='https://coveralls.io/github/vintasoftware/django-virtual-models?branch=main'>
+    <img src='https://coveralls.io/repos/github/vintasoftware/django-virtual-models/badge.svg?branch=main' alt='Coverage Status' />
+</a>
 <a href="https://pypi.org/project/django-virtual-models" target="_blank">
     <img src="https://img.shields.io/pypi/v/django-virtual-models?color=%2334D058&label=pypi%20package" alt="Package version">
 </a>
