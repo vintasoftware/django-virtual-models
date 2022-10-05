@@ -313,7 +313,7 @@ class LookupFinderTests(TestCase):
     def test_nested_serializer_with_join(self):
         """
         1-level nesting like this test works with `NestedJoin`, but 2-levels fails.
-        See: `test_block_deeply_nested_serializer_with_join`
+        See: `test_deeply_nested_serializer_with_join_raises_exception`
         """
 
         class CreatorSerializer(serializers.ModelSerializer):

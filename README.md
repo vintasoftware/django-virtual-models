@@ -39,13 +39,13 @@ For example, imagine if you have following nested serializers starting from `Mov
 ```python
 from movies.models import Nomination, Person, Movie
 
-class NestedAwardSerializer(serializers.ModelSerializer):
+class AwardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Nomination
         fields = ["award", "category", "year", "is_winner"]
 
-class NestedPersonSerializer(serializers.ModelSerializer):
-    awards = NestedAwardSerializer(many=True)
+class PersonSerializer(serializers.ModelSerializer):
+    awards = AwardSerializer(many=True)
     nomination_count = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -53,7 +53,7 @@ class NestedPersonSerializer(serializers.ModelSerializer):
         fields = ["name", "awards", "nomination_count"]
 
 class MovieSerializer(serializers.ModelSerializer):
-    directors = NestedPersonSerializer(many=True)
+    directors = PersonSerializer(many=True)
 
     class Meta:
         model = Movie
