@@ -7,9 +7,7 @@ edit_uri: blob/main/docs/
 
 theme:
   name: material
-  icon:
-    logo: material/database
-    repo: fontawesome/brands/github
+  logo: "img/4d-small.svg"
   favicon: img/favicon.ico
   palette:
     primary: deep-purple
