@@ -408,6 +408,8 @@ class PersonSerializer(v.VirtualModelSerializer):
 If your method field only uses concrete fields, in other words, it doesn't depend on any virtual model fields, nor any `deferred_fields`, you can use the `no_deferred_fields` decorator:
 
 ```python
+from django_virtual_models import prefetch
+
 class PersonSerializer(v.VirtualModelSerializer):
     name_title_case = serializers.SerializerMethodField()
 
@@ -423,7 +425,29 @@ class PersonSerializer(v.VirtualModelSerializer):
 
 ### Prefetching for model properties and methods
 
-TODO.
+DRF Serializers can use directly model properties and methods in `Meta.fields`. If your serializer uses a model property or method, you need to use the same hints described by the previous section "Prefetching for method fields". For example:
+
+```python
+from django_virtual_models import prefetch
+
+class Person(models.Model):
+    name = models.CharField(max_length=255)
+
+    @property  # <--- property must come before
+    @prefetch.hints.no_deferred_fields()
+    def name_title_case(self):
+        return self.name.title()
+
+    # method w/o params, DRF supports that too:
+    def has_won_any_award(self: Annotated[Person, prefetch.Required("awards")]):
+        return len(person.awards) > 0
+
+class PersonSerializer(v.VirtualModelSerializer):
+    class Meta:
+        model = Person
+        virtual_model = VirtualPerson
+        fields = ["name_title_case", "has_won_any_award"]  #  <--- this works
+```
 
 ### Using nested serializers manually
 
