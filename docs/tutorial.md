@@ -20,7 +20,6 @@ class PersonDirector(models.Model):
 
 class Movie(models.Model):
     name = models.CharField(max_length=255)
-    year = models.PositiveSmallIntegerField()
     directors = models.ManyToManyField(
         Person,
         through=PersonDirector,
@@ -50,7 +49,7 @@ class MovieSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Movie
-        fields = ["name", "year", "directors"]
+        fields = ["name", "directors"]
 ```
 
 Now, for every view that uses `MovieSerializer` you'll have to remember to do the following prefetch in every `get_queryset` method:
@@ -174,7 +173,7 @@ class MovieSerializer(v.VirtualModelSerializer):
     class Meta:
         model = Movie
         virtual_model = VirtualMovie  # <--- add this
-        fields = ["name", "year", "directors"]
+        fields = ["name", "directors"]
 
 
 class MovieListView(v.VirtualModelListAPIView):  # <--- changed base class
@@ -266,6 +265,30 @@ As with the regular `Prefetch` from Django, you can specify the `to_attr` in nes
 
 ### Using joins (`select_related`)
 
+If you want the same functionality of Django's `select_related`, you can use a `NestedJoin` field in the virtual model:
+
+```python
+class VirtualNomination(v.VirtualModel):
+    person = v.NestedJoin(model_cls=Person)
+    movie = v.NestedJoin(model_cls=Movie)
+
+    class Meta:
+        model = Nomination
+```
+
+With this, any access to `nomination.person` or `nomination.movie` won't make additional queries. Therefore, you can have nested serializers for those fields.
+
+However, if those nested serializers have their own non-concrete fields (annotations or other nested serializers), then the virtual model will launch an exception with a message like this:
+
+```
+Cannot use a `NestedJoin` for `person` inside `VirtualNomination`.
+`directors` must be a field of `person`,
+because it's a nested serializer on `NominationSerializer`.
+Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
+```
+
+### Deferring fields with `deferred_fields`
+
 TODO.
 
 ### Using methods and properties
@@ -321,10 +344,6 @@ TODO.
 ## Advanced usage
 
 ### Inheriting virtual models
-
-TODO.
-
-### Deferring fields with `deferred_fields`
 
 TODO.
 
