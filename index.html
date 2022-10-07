@@ -361,19 +361,20 @@
 <p align="center">
 <a href="https://github.com/vintasoftware/django-virtual-models/actions?query=workflow%3ATest+event%3Apush+branch%3Amain" target="_blank">
     <img src="https://github.com/vintasoftware/django-virtual-models/workflows/tests/badge.svg?event=push&branch=main" alt="Test">
-</a>
-<a href='https://coveralls.io/github/vintasoftware/django-virtual-models?branch=main'>
-    <img src='https://coveralls.io/repos/github/vintasoftware/django-virtual-models/badge.svg?branch=main' alt='Coverage Status' />
-</a>
+</a>&nbsp;
+<a href="https://coveralls.io/github/vintasoftware/django-virtual-models?branch=main" target="_blank">
+    <img src="https://coveralls.io/repos/github/vintasoftware/django-virtual-models/badge.svg?branch=main" alt="Coverage Status" />
+</a>&nbsp;
 <a href="https://pypi.org/project/django-virtual-models" target="_blank">
     <img src="https://img.shields.io/pypi/v/django-virtual-models?color=%2334D058&label=pypi%20package" alt="Package version">
-</a>
+</a>&nbsp;
 <a href="https://pypi.org/project/django-virtual-models" target="_blank">
     <img src="https://img.shields.io/pypi/pyversions/django-virtual-models.svg?color=%2334D058" alt="Supported Python versions">
 </a>
 </p>
 
 <hr />
+<p><strong>Documentation</strong>: <a href="https://vintasoftware.github.io/django-virtual-models/" target="_blank">https://vintasoftware.github.io/django-virtual-models/</a></p>
 <p><strong>Source Code</strong>: <a href="https://github.com/vintasoftware/django-virtual-models" target="_blank">https://github.com/vintasoftware/django-virtual-models</a></p>
 <hr />
 <p>Django Virtual Models introduces a new "prefetching layer" to Django codebases that assists developers to express complex read logic without sacrificing maintainability, composability and performance. A Virtual Model allows developers to declare all nesting they need along with all annotations, prefetches, and joins in a single declarative class.</p>
@@ -465,7 +466,7 @@
     <span class="p">]</span>
 <span class="p">)</span>
 </code></pre></div>
-<p>If, for example, you forget to add the <code>nomination_count</code> field on <code>VirtualPerson</code>, the following exception will appear:</p>
+<p>If, for example, you forget to add the <code>nomination_count</code> field on <code>VirtualPerson</code>, the following exception will appear when using <code>MovieSerializer</code>:</p>
 <p><img alt="MissingVirtualModelFieldException exception" src="https://user-images.githubusercontent.com/397989/193944879-5205d80b-4102-415e-b178-7630a14db5a1.png" /></p>
 <p>To configure your view and serializer to use Virtual Models, inherit from the proper classes:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">django_virtual_models</span> <span class="k">as</span> <span class="nn">v</span>
@@ -477,7 +478,7 @@
     <span class="n">queryset</span> <span class="o">=</span> <span class="n">Movie</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
     <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">MovieSerializer</span>
 </code></pre></div>
-<p>To learn more, check the <a href="installation/">Installation</a> and the <a href="tutorial/">Tutorial</a>.
+<p>To learn more, check the <a href="https://vintasoftware.github.io/django-virtual-models/installation/">Installation</a> and the <a href="https://vintasoftware.github.io/django-virtual-models/tutorial/">Tutorial</a>.
 Or the <a href="https://github.com/vintasoftware/django-virtual-models/tree/main/example">example project</a>.</p>
 
 
