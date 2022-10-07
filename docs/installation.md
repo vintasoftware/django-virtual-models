@@ -1,3 +1,10 @@
+## Prerequisites
+
+- Python: <a href="https://pypi.org/project/django-virtual-models" target="_blank"><img src="https://img.shields.io/pypi/pyversions/django-virtual-models.svg?color=%2334D058" alt="Supported Python versions"></a>
+- Django >= 3.2
+
+## How to install
+
 To install Django Virtual Models, just do:
 
 ```bash

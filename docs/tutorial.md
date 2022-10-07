@@ -34,7 +34,7 @@ Due to the way Django (and especially Django REST Framework) projects are struct
 
 
 !!! note
-    This section describes the change amplification problem using Django REST Framework as an example, but other API frameworks (and sometimes Django-only codebases) suffer from similar problems because read logic is naturally coupled to prefetch and annotation logic. Please keep reading to check if Django Virtual Models is helpful to you and check the latter sections to learn how to use this library without DRF.
+    This section describes the change amplification problem using Django REST Framework as an example, but other API frameworks (and sometimes Django-only codebases) suffer from similar problems because read logic is naturally coupled to prefetch and annotation logic. Please keep reading to check if Django Virtual Models is helpful to you. Then, the ["Using Virtual Models manually"](#using-virtual-models-manually) section to learn how to use this library without DRF.
 
 Imagine you have the following DRF serializers:
 
@@ -234,10 +234,10 @@ class VirtualPerson(v.VirtualModel):
 Now the view works fine, without any N+1 queries or missing annotations! The `VirtualModelListAPIView` automatically uses the serializer and its virtual model to get an optimized queryset by overriding the `get_queryset` method.
 
 !!! warning
-    If you override the `get_queryset` method without calling super, the virtual model integration will not work. Either call `super().get_queryset()` or use the `v.GenericVirtualModelViewMixin` in case you have custom base view classes. Check the [source code](https://github.com/vintasoftware/django-virtual-models/blob/main/django_virtual_models/generic_views.py) to learn how it works.
+    If you override the `get_queryset` method without calling super, the virtual model integration will not work. Either call `super().get_queryset()` or use the `GenericVirtualModelViewMixin` in case you have custom base view classes. Read more about why on section ["How DRF serializer integration works"](#how-drf-serializer-integration-works).
 
 !!! warning
-    If you already use a custom serializer class, use the `v.VirtualModelSerializerMixin`. Check the [source code](https://github.com/vintasoftware/django-virtual-models/blob/main/django_virtual_models/serializers.py) to learn how it works.
+    If you already use a custom serializer class, use the `VirtualModelSerializerMixin`. Check the [source code](https://github.com/vintasoftware/django-virtual-models/blob/main/django_virtual_models/serializers.py) to learn how it works.
 
 ### Using filtered prefetches
 
@@ -455,10 +455,13 @@ class PersonSerializer(v.VirtualModelSerializer):
         return len(person.awards) > 0
 ```
 
-Now thanks to `prefetch.Required("awards")`, this serializer will be able to require the field `awards` from the virtual model.
+Now thanks to `prefetch.Required("awards")`, this serializer will be able to require the field `awards` from the virtual model. If necessary, you can pass multiple fields or even nested lookups: `prefetch.Required("awards", "nominations__movie")`.
 
 !!! note
     `prefetch.Required` can be used to ensure the fetching of any `deferred_fields` a method needs without N+1s.
+
+!!! note
+    [Annotated](https://docs.python.org/3/library/typing.html#typing.Annotated) is a built-in Python construct that allows us to add custom annotations that don't affect type checking.
 
 #### Using `from_types_of` decorator
 
@@ -523,7 +526,7 @@ class PersonSerializer(v.VirtualModelSerializer):
 
 ### Prefetching for model properties and methods
 
-DRF Serializers can use directly model properties and methods in `Meta.fields`. If your serializer uses a model property or method, you need to use the same hints described by the previous section "Prefetching for method fields". For example:
+DRF Serializers can use directly model properties and methods in `Meta.fields`. If your serializer uses a model property or method, you need to use the same hints described by the previous section ["Prefetching for method fields"](#prefetching-for-method-fields-serializermethodfield). For example:
 
 ```python
 from django_virtual_models import prefetch
@@ -607,3 +610,9 @@ If you want to get all virtual fields, pass `lookup_list=None` or omit the param
 ### Passing down `**kwargs`
 
 The keyword arguments you pass in the virtual model constructor are passed down to `v.Annotate` and `get_prefetch_queryset` of all nested virtual models.
+
+### How DRF serializer integration works
+
+The main logic that connects DRF serializers with Virtual Models is on `LookupFinder` ([source code](https://github.com/vintasoftware/django-virtual-models/blob/main/django_virtual_models/prefetch/serializer_optimization.py)). The `LookupFinder` automatically discovers what virtual fields are needed and raise exceptions if they're not available in the virtual model associated with the serializer. It has a method called `recursively_find_lookup_list` that returns a `lookup_list` to be passed to serializer's virtual model. `recursively_find_lookup_list` is called on `get_queryset` from `GenericVirtualModelViewMixin` ([source code](https://github.com/vintasoftware/django-virtual-models/blob/main/django_virtual_models/generic_views.py)).
+
+If necessary, you can customize this logic in your own view classes.
