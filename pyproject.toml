@@ -35,7 +35,7 @@ dynamic = ["version"]
 
 [project.urls]
 Homepage = "https://github.com/vintasoftware/django-virtual-models"
-Documentation = "https://readthedocs.org/projects/django-virtual-models/"
+Documentation = "https://vintasoftware.github.io/django-virtual-models/"
 
 [project.optional-dependencies]
 doc = [
