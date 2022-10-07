@@ -79,7 +79,7 @@ class PersonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Person
-        fields = ["name"]
+        fields = ["name", "nomination_count"]
 
 # ... requires changes here:
 def queryset_ops_for_MovieSerializer(qs):
@@ -330,7 +330,7 @@ class MovieSerializer(v.VirtualModelSerializer):
     class Meta:
         model = Movie
         virtual_model = VirtualMovie
-        fields = ["user_rating"]
+        fields = ["name", "user_rating"]
 ```
 
 But you need to declare `user_rating` on `VirtualMovie` and ensure it is fetching the rating for the current user. This is possble with the following code:
@@ -388,7 +388,7 @@ class MovieSerializer(v.VirtualModelSerializer):
     class Meta:
         model = Movie
         virtual_model = VirtualMovie
-        fields = ["imdb_rating"]
+        fields = ["name", "imdb_rating"]
 ```
 
 You need to mark `imdb_rating` as something to be ignored in the `VirtualMovie`. Use `v.NoOp()` for that:
