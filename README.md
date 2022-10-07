@@ -24,7 +24,7 @@
 
 ---
 
-**Documentation**: <a href="https://vintasoftware.github.io/django-virtual-models/" target="_blank">(https://vintasoftware.github.io/django-virtual-models/)</a>
+**Documentation**: <a href="https://vintasoftware.github.io/django-virtual-models/" target="_blank">https://vintasoftware.github.io/django-virtual-models/</a>
 
 **Source Code**: <a href="https://github.com/vintasoftware/django-virtual-models" target="_blank">https://github.com/vintasoftware/django-virtual-models</a>
 
