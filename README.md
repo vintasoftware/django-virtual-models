@@ -10,13 +10,13 @@
 <p align="center">
 <a href="https://github.com/vintasoftware/django-virtual-models/actions?query=workflow%3ATest+event%3Apush+branch%3Amain" target="_blank">
     <img src="https://github.com/vintasoftware/django-virtual-models/workflows/tests/badge.svg?event=push&branch=main" alt="Test">
-</a>
-<a href='https://coveralls.io/github/vintasoftware/django-virtual-models?branch=main'>
-    <img src='https://coveralls.io/repos/github/vintasoftware/django-virtual-models/badge.svg?branch=main' alt='Coverage Status' />
-</a>
+</a>&nbsp;
+<a href="https://coveralls.io/github/vintasoftware/django-virtual-models?branch=main" target="_blank">
+    <img src="https://coveralls.io/repos/github/vintasoftware/django-virtual-models/badge.svg?branch=main" alt="Coverage Status" />
+</a>&nbsp;
 <a href="https://pypi.org/project/django-virtual-models" target="_blank">
     <img src="https://img.shields.io/pypi/v/django-virtual-models?color=%2334D058&label=pypi%20package" alt="Package version">
-</a>
+</a>&nbsp;
 <a href="https://pypi.org/project/django-virtual-models" target="_blank">
     <img src="https://img.shields.io/pypi/pyversions/django-virtual-models.svg?color=%2334D058" alt="Supported Python versions">
 </a>
@@ -132,7 +132,7 @@ qs = VirtualMovie().get_optimized_queryset(
 )
 ```
 
-If, for example, you forget to add the `nomination_count` field on `VirtualPerson`, the following exception will appear:
+If, for example, you forget to add the `nomination_count` field on `VirtualPerson`, the following exception will appear when using `MovieSerializer`:
 
 ![MissingVirtualModelFieldException exception](https://user-images.githubusercontent.com/397989/193944879-5205d80b-4102-415e-b178-7630a14db5a1.png)
 
