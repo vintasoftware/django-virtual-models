@@ -6,4 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- ...
+- None.
+
+## [0.0.2]
+
+- Fix documentation link on PyPI.
+
+## [0.0.1]
+
+- First release.
