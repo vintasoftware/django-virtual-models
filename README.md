@@ -24,6 +24,8 @@
 
 ---
 
+**Documentation**: <a href="https://vintasoftware.github.io/django-virtual-models/" target="_blank">(https://vintasoftware.github.io/django-virtual-models/)</a>
+
 **Source Code**: <a href="https://github.com/vintasoftware/django-virtual-models" target="_blank">https://github.com/vintasoftware/django-virtual-models</a>
 
 ---
@@ -147,5 +149,5 @@ class MovieList(v.VirtualModelListAPIView):
     serializer_class = MovieSerializer
 ```
 
-To learn more, check the [Installation](installation.md) and the [Tutorial](tutorial.md).
+To learn more, check the [Installation](https://vintasoftware.github.io/django-virtual-models/installation/) and the [Tutorial](https://vintasoftware.github.io/django-virtual-models/tutorial/).
 Or the [example project](https://github.com/vintasoftware/django-virtual-models/tree/main/example).
