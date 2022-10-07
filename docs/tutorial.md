@@ -551,7 +551,7 @@ class PersonSerializer(v.VirtualModelSerializer):
 
 ### Getting optimized querysets
 
-If you do not use Django REST Framework, you can still benefit from using Virtual Models to avoid maintaining annotations and prefetches across several parts of your codebase. By centralizing the read logic in virtual models, you reduce the cognitive load and the change amplification.
+If you do not use Django REST Framework, you can still benefit from using Virtual Models to avoid maintaining annotations and prefetches across several parts of your codebase. By centralizing the read logic in virtual models, you reduce cognitive load and change amplification.
 
 Consider the following virtual models:
 
@@ -562,6 +562,7 @@ class VirtualAward(v.VirtualModel):
 
     def get_prefetch_queryset(self, **kwargs):
         return Nomination.objects.filter(is_winner=True)
+
 
 class VirtualPerson(v.VirtualModel):
     awards = VirtualAward(
@@ -577,24 +578,32 @@ class VirtualPerson(v.VirtualModel):
 
     class Meta:
         model = Person
+
+
+class VirtualMovie(v.VirtualModel):
+    directors = VirtualPerson(manager=Person.objects)
+
+    class Meta:
+        model = Movie
 ```
 
-You can hydrate... TODO.
+You can hydrate an existing queryset with those virtual fields by using a syntax similar to Django lookups:
 
-### Selecting fields with lookup syntax
+```python
+qs = Movie.objects.order_by("name")
+optimized_qs = VirtualMovie().get_optimized_queryset(
+    qs,
+    lookup_list=[
+        "directors__awards",
+        "directors__nomination_count",
+    ]
+)
+```
 
-TODO.
+When the `lookup_list` omits a virtual field, it is not included in the optimized queryset.
 
-## Advanced usage
-
-### Inheriting virtual models
-
-TODO.
-
-### Passing down current request user
-
-TODO.
+If you want to get all virtual fields, pass `lookup_list=None` or omit the parameter.
 
 ### Passing down `**kwargs`
 
-TODO.
+The keyword arguments you pass in the virtual model constructor are passed down to `v.Annotate` and `get_prefetch_queryset` of all nested virtual models.

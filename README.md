@@ -121,7 +121,13 @@ class VirtualMovie(v.VirtualModel):
     class Meta:
         model = Movie
 
-qs = VirtualMovie().get_optimized_queryset(Movie.objects.all())
+qs = VirtualMovie().get_optimized_queryset(
+    Movie.objects.all(),
+    lookup_list=[
+        "directors__awards",
+        "directors__nomination_count",
+    ]
+)
 ```
 
 If, for example, you forget to add the `nomination_count` field on `VirtualPerson`, the following exception will appear:
