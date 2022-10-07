@@ -236,6 +236,9 @@ Now the view works fine, without any N+1 queries or missing annotations! The `Vi
 !!! warning
     If you override the `get_queryset` method without calling super, the virtual model integration will not work. Either call `super().get_queryset()` or use the `v.GenericVirtualModelViewMixin` in case you have custom base view classes. Check the [source code](https://github.com/vintasoftware/django-virtual-models/blob/main/django_virtual_models/generic_views.py) to learn how it works.
 
+!!! warning
+    If you already use a custom serializer class, use the `v.VirtualModelSerializerMixin`. Check the [source code](https://github.com/vintasoftware/django-virtual-models/blob/main/django_virtual_models/serializers.py) to learn how it works.
+
 ### Using filtered prefetches
 
 If you need to prefetch a relationship with some filtering, you can define a method called `get_prefetch_queryset` inside the `VirtualModel`. Suppose we need to fetch only the nominations that a person won (with `is_winner=True`). It's simple to do that:
@@ -305,6 +308,66 @@ Note this only makes a difference if the `biography` field is *not* declared in 
 
 But if you don't have the `biography` field in your serializer, any access to `person.biography` will make a new query. This is the same behavior of using `Person.objects.defer("biography")` in regular Django.
 
+### Returning data relative to the current user
+
+Sometimes it makes sense to include data relative to the current user in the virtual model fields.
+
+Imagine you have a `UserMovieRating` model that relates users with movies and has a rating field:
+
+```python
+class UserMovieRating(models.Model):
+    user = models.ForeignKey("User")
+    movie = models.ForeignKey("Movie", related_name="ratings")
+    rating = models.DecimalField(max_digits=3, decimal_places=1)
+```
+
+You can add a field for `user_rating` in a `MovieSerializer`:
+
+```python
+class MovieSerializer(v.VirtualModelSerializer):
+    user_rating = serializers.DecimalField(max_digits=3, decimal_places=1)
+
+    class Meta:
+        model = Movie
+        virtual_model = VirtualMovie
+        fields = ["user_rating"]
+```
+
+But you need to declare `user_rating` on `VirtualMovie` and ensure it is fetching the rating for the current user. This is possble with the following code:
+
+```python
+class VirtualMovie(v.VirtualModel):
+    user_rating = v.Annotation(
+        # Note `user` is an argument here:
+        lambda qs, user, **kwargs: qs.annotate(
+            Subquery(
+                UserMovieRating.objects.filter(
+                    movie_id=OuterRef("pk"),
+                    user=user
+                ).values("rating")[:1]
+            )
+        )
+    )
+
+    class Meta:
+        model = Movie
+```
+
+The `user` argument is available on `v.Annotation` thanks to `v.VirtualModelSerializer` that gets the current user from `self.context["request"].user`.
+
+The `user` argument is also available on `get_prefetch_queryset` for use in filtered prefetches. Therefore, the following code works:
+
+```python
+class VirtualUserMovieRating(v.VirtualModel):
+    class Meta:
+        model = UserMovieRating
+
+    def get_prefetch_queryset(self, user, **kwargs):  # <--- here
+        return UserMovieRating.objects.filter(user=user)
+```
+
+!!! warning
+    An advice: in general, you should avoid returning data relative to the current user in HTTP APIs, as this makes caching very hard or even impossible. Use this only if you really need it, as in a request that's only specific for users like user profile pages. Avoid nesting data related to the current user inside global data. Consider adding an additional request to fetch data relative to the current user, and then "hydrate" the previous request data on the frontend.
 
 ### Ignoring a serializer field
 
