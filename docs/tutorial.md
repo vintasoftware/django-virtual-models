@@ -160,7 +160,7 @@ class VirtualMovie(v.VirtualModel):
         model = Movie
 ```
 
-The best thing is: this is already usable! Although the only purpose to use an empty Virtual Model is to get an exception...
+The best thing is: this is already usable. Although the only purpose to use an empty Virtual Model is to get an exception...
 
 But that's what you want! The idea is to be guided by the virtual model exceptions to know what fields you need to add to it. First, integrate the `VirtualMovie` with the `MovieSerializer` and the view by doing the following:
 
@@ -305,7 +305,42 @@ Note this only makes a difference if the `biography` field is *not* declared in 
 
 But if you don't have the `biography` field in your serializer, any access to `person.biography` will make a new query. This is the same behavior of using `Person.objects.defer("biography")` in regular Django.
 
-## Advanced use with Django REST Framework
+
+### Ignoring a serializer field
+
+If you have a serializer field that fetches data from somewhere other than your Django models, you cannot prefetch data for it with a Virtual Model. So you need to make the Virtual Model ignore that field.
+
+Suppose you have some serializer that fetches data from an external service:
+
+```python
+class IMDBRatingField(serializers.Field):
+    """
+    Fetches the IMDB Rating for the movie.
+    """
+    ...
+
+class MovieSerializer(v.VirtualModelSerializer):
+    imdb_rating = IMDBRatingField()
+
+    class Meta:
+        model = Movie
+        virtual_model = VirtualMovie
+        fields = ["imdb_rating"]
+```
+
+You need to mark `imdb_rating` as something to be ignored in the `VirtualMovie`. Use `v.NoOp()` for that:
+
+```python
+class VirtualMovie(v.VirtualModel):
+    imdb_rating = v.NoOp()
+
+    class Meta:
+        model = Movie
+```
+
+## Prefetch hints with Django REST Framework
+
+If your DRF serializer uses method fields, model methods or properties, you can still use Virtual Models with it! But you need to add some *prefetch hints*.
 
 ### Prefetching for method fields (`SerializerMethodField`)
 
@@ -448,14 +483,6 @@ class PersonSerializer(v.VirtualModelSerializer):
         virtual_model = VirtualPerson
         fields = ["name_title_case", "has_won_any_award"]  #  <--- this works
 ```
-
-### Using nested serializers manually
-
-TODO.
-
-### Ignoring a field
-
-TODO.
 
 ## Using Virtual Models manually
 
