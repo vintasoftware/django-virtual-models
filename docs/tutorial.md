@@ -342,7 +342,7 @@ class VirtualMovie(v.VirtualModel):
         lambda qs, user, **kwargs: qs.annotate(
             Subquery(
                 UserMovieRating.objects.filter(
-                    movie_id=OuterRef("pk"),
+                    movie=OuterRef("pk"),
                     user=user
                 ).values("rating")[:1]
             )

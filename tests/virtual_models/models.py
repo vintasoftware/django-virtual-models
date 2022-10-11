@@ -101,7 +101,7 @@ class AssignmentQueryset(models.QuerySet):
         # Instead, use SQCount:
         return self.annotate(
             lessons_total=SQCount(
-                Lesson.objects.filter(course_id=OuterRef("course_id")),
+                Lesson.objects.filter(course=OuterRef("course_id")),
             ),
         )
 
@@ -111,7 +111,7 @@ class AssignmentQueryset(models.QuerySet):
         # Instead, use SQCount:
         return self.annotate(
             lessons_completed_total=SQCount(
-                CompletedLesson.objects.filter(assignment_id=OuterRef("id")),
+                CompletedLesson.objects.filter(assignment=OuterRef("id")),
             ),
         )
 
