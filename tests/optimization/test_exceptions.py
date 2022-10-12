@@ -5,7 +5,7 @@ from rest_framework import serializers
 from typing_extensions import Annotated
 
 import django_virtual_models as v
-from django_virtual_models import prefetch
+from django_virtual_models.prefetch import hints
 from django_virtual_models.prefetch.exceptions import (
     ImproperlyAnnotatedCodeException,
     MissingVirtualModelFieldException,
@@ -22,7 +22,7 @@ class VirtualCourse(v.VirtualModel):
         model = Course
 
 
-def get_lesson_title_list(course: Annotated[Course, prefetch.Required("lessons")]):
+def get_lesson_title_list(course: Annotated[Course, hints.Virtual("lessons")]):
     ...
 
 
@@ -38,12 +38,10 @@ class BaseCourseSerializer(serializers.ModelSerializer):
             "lesson_titles_from_function",
         ]
 
-    def get_lesson_titles_from_method(
-        self, course: Annotated[Course, prefetch.Required("lessons")]
-    ):
+    def get_lesson_titles_from_method(self, course: Annotated[Course, hints.Virtual("lessons")]):
         ...
 
-    @prefetch.hints.from_types_of(get_lesson_title_list, "course")
+    @v.hints.from_types_of(get_lesson_title_list, "course")
     def get_lesson_titles_from_function(self, course, get_lesson_title_list_helper):
         ...
 
@@ -65,8 +63,8 @@ class LookupFinderExceptionTest(TestCase):
 
         assert (
             "`get_lesson_titles_from_method` inside `BrokenCourseSerializer` "
-            "must have a `prefetch.hints` decorator or a single `Annotated` type hint "
-            "with a single `prefetch.Required` inside it." in str(ctx.exception)
+            "must have a `hints` decorator or a single `Annotated` type hint "
+            "with a single `hints.Virtual` inside it." in str(ctx.exception)
         )
 
     def test_method_without_annotated_raises_exception(self):
@@ -85,7 +83,7 @@ class LookupFinderExceptionTest(TestCase):
 
         assert (
             "`get_lesson_titles_from_method` inside `BrokenCourseSerializer` "
-            "must have a single `Annotated` type hint with a single `prefetch.Required` inside it."
+            "must have a single `Annotated` type hint with a single `hints.Virtual` inside it."
             in str(ctx.exception)
         )
 
@@ -107,7 +105,7 @@ class LookupFinderExceptionTest(TestCase):
 
         assert (
             "`get_lesson_titles_from_method` inside `BrokenCourseSerializer` "
-            "must have a single `Annotated` type hint with a single `prefetch.Required` inside it."
+            "must have a single `Annotated` type hint with a single `hints.Virtual` inside it."
             in str(ctx.exception)
         )
 
@@ -141,8 +139,8 @@ class LookupFinderExceptionTest(TestCase):
                 self,
                 course: Annotated[
                     Course,
-                    prefetch.Required("lessons"),
-                    prefetch.Required("settings")
+                    hints.Virtual("lessons"),
+                    hints.Virtual("settings")
                     # two prefetch here
                 ],
             ):
@@ -159,7 +157,7 @@ class LookupFinderExceptionTest(TestCase):
 
         assert (
             "`get_lesson_titles_from_method` inside `BrokenCourseSerializer` "
-            "must have a single `Annotated` type hint with a single `prefetch.Required` inside it."
+            "must have a single `Annotated` type hint with a single `hints.Virtual` inside it."
             in str(ctx.exception)
         )
 
@@ -168,7 +166,7 @@ class LookupFinderExceptionTest(TestCase):
             ...
 
         class BrokenCourseSerializer(BaseCourseSerializer):
-            @prefetch.hints.from_types_of(get_lesson_title_list, "course")
+            @v.hints.from_types_of(get_lesson_title_list, "course")
             def get_lesson_titles_from_function(self, course, get_lesson_title_list_helper):
                 ...
 
@@ -191,7 +189,7 @@ class LookupFinderExceptionTest(TestCase):
 
     def test_function_with_wrong_param_name_raises_exception(self):
         class BrokenCourseSerializer(BaseCourseSerializer):
-            @prefetch.hints.from_types_of(
+            @v.hints.from_types_of(
                 get_lesson_title_list, obj_param_name="course_blabla"  # wrong param name
             )
             def get_lesson_titles_from_function(self, course, get_lesson_title_list_helper):
@@ -221,7 +219,7 @@ class LookupFinderExceptionTest(TestCase):
             ...
 
         class BrokenCourseSerializer(BaseCourseSerializer):
-            @prefetch.hints.from_types_of(get_lesson_title_list, "course")
+            @v.hints.from_types_of(get_lesson_title_list, "course")
             def get_lesson_titles_from_function(self, course, get_lesson_title_list_helper):
                 ...
 
@@ -238,7 +236,7 @@ class LookupFinderExceptionTest(TestCase):
         assert (
             "referenced by decorator `from_types_of` on `get_lesson_titles_from_function` "
             "inside `BrokenCourseSerializer` must have a `Annotated` type hint on param `course` "
-            "with a single `prefetch.Required` inside it." in str(ctx.exception)
+            "with a single `hints.Virtual` inside it." in str(ctx.exception)
         )
 
     def test_function_with_wrong_annotated_raises_exception(self):
@@ -246,7 +244,7 @@ class LookupFinderExceptionTest(TestCase):
             ...
 
         class BrokenCourseSerializer(BaseCourseSerializer):
-            @prefetch.hints.from_types_of(get_lesson_title_list, "course")
+            @v.hints.from_types_of(get_lesson_title_list, "course")
             def get_lesson_titles_from_function(self, course, get_lesson_title_list_helper):
                 ...
 
@@ -263,22 +261,22 @@ class LookupFinderExceptionTest(TestCase):
         assert (
             "referenced by decorator `from_types_of` on `get_lesson_titles_from_function` "
             "inside `BrokenCourseSerializer` must have a `Annotated` type hint on param `course` "
-            "with a single `prefetch.Required` inside it." in str(ctx.exception)
+            "with a single `hints.Virtual` inside it." in str(ctx.exception)
         )
 
     def test_function_with_two_prefetch_annotations_raises_exception(self):
         def get_lesson_title_list(
             course: Annotated[
                 Course,
-                prefetch.Required("lessons"),
-                prefetch.Required("settings")
+                hints.Virtual("lessons"),
+                hints.Virtual("settings")
                 # two prefetch here
             ]
         ):
             ...
 
         class BrokenCourseSerializer(BaseCourseSerializer):
-            @prefetch.hints.from_types_of(get_lesson_title_list, "course")
+            @v.hints.from_types_of(get_lesson_title_list, "course")
             def get_lesson_titles_from_function(self, course, get_lesson_title_list_helper):
                 ...
 
@@ -295,7 +293,7 @@ class LookupFinderExceptionTest(TestCase):
         assert (
             "referenced by decorator `from_types_of` on `get_lesson_titles_from_function` "
             "inside `BrokenCourseSerializer` must have a `Annotated` type hint on param `course` "
-            "with a single `prefetch.Required` inside it." in str(ctx.exception)
+            "with a single `hints.Virtual` inside it." in str(ctx.exception)
         )
 
     def test_deeply_nested_serializer_with_join_raises_exception(self):
@@ -390,7 +388,7 @@ class LookupFinderExceptionTest(TestCase):
                 self,
                 course: Annotated[
                     Course,
-                    prefetch.Required("description_first_line"),  # prefetch required on property
+                    hints.Virtual("description_first_line"),  # prefetch required on property
                 ],
             ):
                 ...
@@ -422,7 +420,7 @@ class LookupFinderExceptionTest(TestCase):
                 self,
                 course: Annotated[
                     Course,
-                    prefetch.Required("foo"),  # prefetch required on non-concrete field
+                    hints.Virtual("foo"),  # prefetch required on non-concrete field
                 ],
             ):
                 ...

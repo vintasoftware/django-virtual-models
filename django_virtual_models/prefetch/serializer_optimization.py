@@ -8,7 +8,7 @@ from rest_framework.fields import Field
 
 import typing_extensions
 
-from django_virtual_models import prefetch
+from django_virtual_models.prefetch import hints
 
 from .. import utils
 from ..fields import BaseVirtualField, NestedJoin, NoOp
@@ -29,7 +29,7 @@ def _validate_type_hint(type_hint, invalid_type_hint_message):
         raise ImproperlyAnnotatedCodeException(invalid_type_hint_message)
 
     metadata = typing_extensions.get_args(type_hint)[1:]
-    metadata_only = [datum for datum in metadata if isinstance(datum, prefetch.Required)]
+    metadata_only = [datum for datum in metadata if isinstance(datum, hints.Virtual)]
     if len(metadata_only) == 0:
         raise ImproperlyAnnotatedCodeException(invalid_type_hint_message)
     if len(metadata_only) > 1:
@@ -44,8 +44,8 @@ def _extract_type_hint_from_function(field, function):
     if len(type_hints_dict) == 0:
         raise ImproperlyAnnotatedCodeException(
             f"`{friendly_name}` inside `{field.parent.__class__.__name__}` "
-            "must have a `prefetch.hints` decorator or "
-            "a single `Annotated` type hint with a single `prefetch.Required` inside it."
+            "must have a `hints` decorator or "
+            "a single `Annotated` type hint with a single `hints.Virtual` inside it."
         )
     if len(type_hints_dict) > 1:
         raise ImproperlyAnnotatedCodeException(
@@ -58,14 +58,14 @@ def _extract_type_hint_from_function(field, function):
     # Check if Annotated is correct
     invalid_type_hint_message = (
         f"`{friendly_name}` inside `{field.parent.__class__.__name__}` "
-        "must have a single `Annotated` type hint with a single `prefetch.Required` inside it."
+        "must have a single `Annotated` type hint with a single `hints.Virtual` inside it."
     )
     _validate_type_hint(type_hint, invalid_type_hint_message=invalid_type_hint_message)
     return type_hint
 
 
 def _extract_type_hint_from_types_of_other_function(
-    field: Field, decorator_instance: prefetch.hints.from_types_of
+    field: Field, decorator_instance: hints.from_types_of
 ):
     friendly_name = utils.get_friendly_field_name(field)
     typed_func = decorator_instance.typed_func
@@ -93,7 +93,7 @@ def _extract_type_hint_from_types_of_other_function(
         f"referenced by decorator `{decorator_instance.__class__.__name__}` "
         f"on `{friendly_name}` inside `{field.parent.__class__.__name__}` "
         f"must have a `Annotated` type hint on param `{decorator_instance.obj_param_name}` "
-        "with a single `prefetch.Required` inside it."
+        "with a single `hints.Virtual` inside it."
     )
     _validate_type_hint(type_hint, invalid_type_hint_message=invalid_type_hint_message)
     return type_hint
@@ -101,9 +101,7 @@ def _extract_type_hint_from_types_of_other_function(
 
 def _extract_lookups_from_type_hint_obj(type_hint) -> List[str]:
     metadata = typing_extensions.get_args(type_hint)[1:]
-    only = next(
-        datum for datum in metadata if isinstance(datum, prefetch.Required)
-    )  # pragma: no cover
+    only = next(datum for datum in metadata if isinstance(datum, hints.Virtual))  # pragma: no cover
     return only.fields
 
 
@@ -146,10 +144,10 @@ def _extract_lookups_from_function_type_hint(
     if decorator_instance is None:
         type_hint = _extract_type_hint_from_function(field, function)
         return _extract_lookups_from_type_hint_obj(type_hint)
-    elif isinstance(decorator_instance, prefetch.hints.from_types_of):
+    elif isinstance(decorator_instance, hints.from_types_of):
         type_hint = _extract_type_hint_from_types_of_other_function(field, decorator_instance)
         return _extract_lookups_from_type_hint_obj(type_hint)
-    elif isinstance(decorator_instance, prefetch.hints.from_serializer):
+    elif isinstance(decorator_instance, hints.from_serializer):
         serializer_instance = decorator_instance.serializer_cls(
             **(decorator_instance.serializer_kwargs or {})
         )
@@ -160,10 +158,10 @@ def _extract_lookups_from_function_type_hint(
             serializer_instance=serializer_instance,
             block_queries=block_queries,
         )
-    elif isinstance(decorator_instance, prefetch.hints.defined_on_virtual_model):
+    elif isinstance(decorator_instance, hints.defined_on_virtual_model):
         # `field.field_name` must be defined in virtual model
         return [field.field_name]
-    elif isinstance(decorator_instance, prefetch.hints.no_deferred_fields):
+    elif isinstance(decorator_instance, hints.no_deferred_fields):
         # `field.field_name` uses only fields that are always
         # fetched by the virtual model (which are all concrete fields minus the deferred ones)
         # so we don't need to return anything here to be included as a lookup
@@ -440,7 +438,7 @@ class LookupFinder:
                     f"Debug info `{k}` from `{self.serializer_instance.__class__.__name__}`"
                 )  # pragma: no cover
 
-        # activate the `prefetch.hints` decorators to block unexpected queries
+        # activate the `hints` decorators to block unexpected queries
         if self.block_queries:
             self._activate_query_blocking(
                 readable_serializer_fields=readable_serializer_fields,

@@ -36,10 +36,10 @@ def _wrap_func_blocking_queries(decorated_func, is_active_fn, extra_args=None):
             raise MissingHintsException(
                 f"Unexpected query happened inside `{decorated_func.__qualname__}`.\n"
                 f"*Possible* line: {s.filename}:{s.lineno}\n"
-                "Please check if all `prefetch.hints` are correct, "
+                "Please check if all `hints` are correct, "
                 "and update them and the virtual model as needed.\n"
                 "Also, if this field is deferred on virtual model, "
-                "it needs to be hinted with `prefech.Required`\n"
+                "it needs to be hinted with `hints.Virtual`\n"
                 "See more details about the query on the other exception above (in console)."
             ) from exc
 
@@ -124,7 +124,7 @@ class defined_on_virtual_model(OnOffDecorator):  # noqa: N801
 
 
 @dataclass
-class Required:
+class Virtual:
     fields: List[str]
 
     def __init__(self, *args):

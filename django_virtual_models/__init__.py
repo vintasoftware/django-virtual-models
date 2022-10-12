@@ -9,4 +9,5 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 # Top-level imports:
 from .fields import *
 from .generic_views import *
+from .prefetch import hints
 from .serializers import *

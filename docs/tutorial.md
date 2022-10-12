@@ -435,14 +435,14 @@ class PersonSerializer(v.VirtualModelSerializer):
 
 This serializer needs the `awards` field from `VirtualPerson` inside `get_has_won_any_award` method, otherwise it would raise an `AttributeError` as this is a *virtual field*. But how to specify that requirement? There are multiple ways of doing this:
 
-#### Using type hints with `prefetch.Required`
+#### Using type hints with `hints.Virtual`
 
 This library supports special type hints for informing what virtual fields a serializer method needs:
 
 ```python
 # Python < 3.9. For >= 3.9, use `from typing import Annotated`:
 from typing_extensions import Annotated
-from django_virtual_models import prefetch
+from django_virtual_models import hints
 
 class PersonSerializer(v.VirtualModelSerializer):
     ...
@@ -450,31 +450,31 @@ class PersonSerializer(v.VirtualModelSerializer):
     def get_has_won_any_award(
         self,
         # Type hint to ensure `awards` here:
-        person: Annotated[Person, prefetch.Required("awards")]
+        person: Annotated[Person, hints.Virtual("awards")]
     ):
         return len(person.awards) > 0
 ```
 
-Now thanks to `prefetch.Required("awards")`, this serializer will be able to require the field `awards` from the virtual model. If necessary, you can pass multiple fields or even nested lookups: `prefetch.Required("awards", "nominations__movie")`.
+Now thanks to `hints.Virtual("awards")`, this serializer will be able to require the field `awards` from the virtual model. If necessary, you can pass multiple fields or even nested lookups: `hints.Virtual("awards", "nominations__movie")`.
 
 !!! note
-    `prefetch.Required` can be used to ensure the fetching of any `deferred_fields` a method needs without N+1s.
+    `hints.Virtual` can be used to ensure the fetching of any `deferred_fields` a method needs without N+1s.
 
 !!! note
     [Annotated](https://docs.python.org/3/library/typing.html#typing.Annotated) is a built-in Python construct that allows us to add custom annotations that don't affect type checking.
 
 #### Using `from_types_of` decorator
 
-If your method calls another function, you can add type hints to that function with `prefetch.Required` and then use the `from_types_of` decorator:
+If your method calls another function, you can add type hints to that function with `hints.Virtual` and then use the `from_types_of` decorator:
 
 ```python
 # Python < 3.9. For >= 3.9, use `from typing import Annotated`:
 from typing_extensions import Annotated
-from django_virtual_models import prefetch
+from django_virtual_models import hints
 
 def check_person_has_won_any_award(
     # Type hint to ensure `awards` here:
-    person: Annotated[Person, prefetch.Required("awards")]
+    person: Annotated[Person, hints.Virtual("awards")]
 ):
     return len(person.awards) > 0
 
@@ -482,7 +482,7 @@ class PersonSerializer(v.VirtualModelSerializer):
     ...
 
     # Decorator to specify where to find the type hint here:
-    @prefetch.hints.from_types_of(check_person_has_won_any_award, "person")
+    @hints.from_types_of(check_person_has_won_any_award, "person")
     def get_has_won_any_award(self, person, check_person_has_won_any_award):
         return check_person_has_won_any_award(person)
 ```
@@ -494,12 +494,12 @@ Note the function `check_person_has_won_any_award` is received in the decorator 
 If you have the `has_won_any_award` field in your virtual model, you can use the `defined_on_virtual_model` decorator:
 
 ```python
-from django_virtual_models import prefetch
+from django_virtual_models import hints
 
 class PersonSerializer(v.VirtualModelSerializer):
     ...
 
-    @prefetch.hints.defined_on_virtual_model()  # <--- here
+    @hints.defined_on_virtual_model()  # <--- here
     def get_has_won_any_award(self, person):
         return person.has_won_any_award
 ```
@@ -509,7 +509,7 @@ class PersonSerializer(v.VirtualModelSerializer):
 If your method field only uses concrete fields, in other words, it doesn't depend on any virtual model fields, nor any `deferred_fields`, you can use the `no_deferred_fields` decorator:
 
 ```python
-from django_virtual_models import prefetch
+from django_virtual_models import hints
 
 class PersonSerializer(v.VirtualModelSerializer):
     name_title_case = serializers.SerializerMethodField()
@@ -519,7 +519,7 @@ class PersonSerializer(v.VirtualModelSerializer):
         virtual_model = VirtualPerson
         fields = ["name_title_case"]
 
-    @prefetch.hints.no_deferred_fields()  # <--- here
+    @hints.no_deferred_fields()  # <--- here
     def get_name_title_case(self, person):
         return person.name.title()
 ```
@@ -529,18 +529,18 @@ class PersonSerializer(v.VirtualModelSerializer):
 DRF Serializers can use directly model properties and methods in `Meta.fields`. If your serializer uses a model property or method, you need to use the same hints described by the previous section ["Prefetching for method fields"](#prefetching-for-method-fields-serializermethodfield). For example:
 
 ```python
-from django_virtual_models import prefetch
+from django_virtual_models import hints
 
 class Person(models.Model):
     name = models.CharField(max_length=255)
 
     @property  # <--- property must come before
-    @prefetch.hints.no_deferred_fields()
+    @hints.no_deferred_fields()
     def name_title_case(self):
         return self.name.title()
 
     # method w/o params, DRF supports that too:
-    def has_won_any_award(self: Annotated[Person, prefetch.Required("awards")]):
+    def has_won_any_award(self: Annotated[Person, hints.Virtual("awards")]):
         return len(person.awards) > 0
 
 class PersonSerializer(v.VirtualModelSerializer):

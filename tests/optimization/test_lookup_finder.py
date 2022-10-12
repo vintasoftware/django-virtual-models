@@ -11,8 +11,8 @@ from model_bakery import baker
 from typing_extensions import Annotated
 
 import django_virtual_models as v
-from django_virtual_models import prefetch
 from django_virtual_models.exceptions import MissingHintsException
+from django_virtual_models.prefetch import hints
 from django_virtual_models.prefetch.serializer_optimization import LookupFinder
 
 from ..virtual_models.models import (
@@ -81,7 +81,7 @@ class NestedUserAssignmentSerializer(NestedAssignmentSerializer):
         ]
 
 
-def get_lesson_title_list(course: Annotated[Course, prefetch.Required("lessons")]):
+def get_lesson_title_list(course: Annotated[Course, hints.Virtual("lessons")]):
     lessons = list(course.lessons.all())
     lessons.sort(key=lambda lesson: lesson.created)
     return [lesson.title for lesson in lessons]
@@ -116,12 +116,12 @@ class CourseSerializer(serializers.ModelSerializer):
             "lesson_titles",
         ]
 
-    @prefetch.hints.no_deferred_fields()
+    @hints.no_deferred_fields()
     def get_slug(self, course):
         # use only concrete fields below
         return slugify(course.name)
 
-    @prefetch.hints.defined_on_virtual_model()
+    @hints.defined_on_virtual_model()
     def get_facilitator_emails(self, course):
         if hasattr(course, "facilitator_emails"):
             return course.facilitator_emails
@@ -131,7 +131,7 @@ class CourseSerializer(serializers.ModelSerializer):
         return None
 
     def get_facilitator_domains(
-        self, course: Annotated[Course, prefetch.Required("facilitator_emails")]
+        self, course: Annotated[Course, hints.Virtual("facilitator_emails")]
     ):
         if hasattr(course, "facilitator_emails"):
             return list({email.split("@")[-1] for email in course.facilitator_emails})
@@ -140,13 +140,13 @@ class CourseSerializer(serializers.ModelSerializer):
         # but one could add fallback code here:
         return None
 
-    @prefetch.hints.from_serializer(NestedUserAssignmentSerializer)
+    @hints.from_serializer(NestedUserAssignmentSerializer)
     def get_user_assignment(self, obj, serializer_cls):
         if getattr(obj, "user_assignment", None):
             return serializer_cls(obj.user_assignment[0]).data
         return None
 
-    @prefetch.hints.from_types_of(get_lesson_title_list, "course")
+    @v.hints.from_types_of(get_lesson_title_list, "course")
     def get_lesson_titles(self, course, get_lesson_title_list_helper):
         return get_lesson_title_list_helper(course)
 
@@ -263,19 +263,19 @@ class LookupFinderTests(TestCase):
 
     def test_from_serializer_hint(self):
         # Override CourseSerializer and replace nested serializers with
-        # `SerializerMethodField`s and use `prefetch.hints.from_serializer` on those.
+        # `SerializerMethodField`s and use `hints.from_serializer` on those.
         class AltCourseSerializer(CourseSerializer):
             user_assignment = serializers.SerializerMethodField()
             assignments = serializers.SerializerMethodField()
 
-            @prefetch.hints.from_serializer(
+            @hints.from_serializer(
                 serializer_cls=NestedUserAssignmentSerializer,
                 serializer_kwargs={"context": {"foo": "bar"}},
             )
             def get_user_assignment(self, obj, serializer_cls, serializer_kwargs):
                 ...
 
-            @prefetch.hints.from_serializer(serializer_cls=NestedAssignmentSerializer)
+            @hints.from_serializer(serializer_cls=NestedAssignmentSerializer)
             def get_assignments(self, obj, serializer_cls):
                 ...
 
@@ -343,7 +343,7 @@ class LookupFinderTests(TestCase):
     @override_settings(DEBUG=True)
     def test_prefetch_hints_block_queries_on_serializer_evaluation(self):
         class BrokenCourseSerializer(CourseSerializer):
-            @prefetch.hints.from_types_of(get_lesson_title_list, "course")
+            @v.hints.from_types_of(get_lesson_title_list, "course")
             def get_lesson_titles(self, course, get_lesson_title_list_helper):
                 list(course.lessons.order_by("title"))  # new query
 
@@ -366,7 +366,7 @@ class LookupFinderTests(TestCase):
     @override_settings(DEBUG=True)
     def test_prefetch_hints_does_not_block_queries_if_false(self):
         class BrokenCourseSerializer(CourseSerializer):
-            @prefetch.hints.from_types_of(get_lesson_title_list, "course")
+            @v.hints.from_types_of(get_lesson_title_list, "course")
             def get_lesson_titles(self, course, get_lesson_title_list_helper):
                 list(course.lessons.order_by("title"))  # new query
 
@@ -396,8 +396,8 @@ class LookupFinderTests(TestCase):
 
             def get_created_by_email(
                 self,
-                # should have Annotated[Course, prefetch.Required("created_by")]:
-                course: Annotated[Course, prefetch.Required("description")],
+                # should have Annotated[Course, hints.Virtual("created_by")]:
+                course: Annotated[Course, hints.Virtual("description")],
             ):
                 return course.created_by.email
 

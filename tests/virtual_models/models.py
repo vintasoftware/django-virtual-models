@@ -5,7 +5,7 @@ from django.db.models import Aggregate, OuterRef
 
 from typing_extensions import Annotated
 
-from django_virtual_models import prefetch
+from django_virtual_models.prefetch import hints
 
 
 class SQArrayAgg(Aggregate):
@@ -67,12 +67,12 @@ class Course(TimeStampedModel):
     )
     settings = models.JSONField(default=dict, blank=True)
 
-    @prefetch.hints.no_deferred_fields()
+    @hints.no_deferred_fields()
     def name_title_case(self):
         return self.name.title()
 
     @property
-    def description_first_line(self: Annotated[Course, prefetch.hints.Required("description")]):
+    def description_first_line(self: Annotated[Course, hints.Virtual("description")]):
         try:
             return self.description.splitlines()[0]
         except IndexError:
@@ -144,7 +144,7 @@ class Assignment(TimeStampedModel):
 
     @property
     def last_completed_lesson_name(
-        self: Annotated[Assignment, prefetch.Required("course", "completed_lessons")]
+        self: Annotated[Assignment, hints.Virtual("course", "completed_lessons")]
     ):
         lessons = list(self.completed_lessons.all())
         lessons.sort(key=lambda lesson: lesson.created)
