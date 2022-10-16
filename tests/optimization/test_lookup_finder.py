@@ -52,6 +52,7 @@ class VirtualCourse(v.VirtualModel):
     assignments = NestedAssignment(
         manager=Assignment.objects,
     )
+    assignees = v.VirtualModel(manager=User.objects)
     lessons = v.VirtualModel(manager=Lesson.objects)
     settings = v.NoOp()
 
@@ -200,22 +201,23 @@ class LookupFinderTests(TestCase):
 
         assert sorted(lookup_list) == sorted(
             [
+                "name",
+                "created_by__id",
+                "created_by__email",
+                "description",
+                "facilitator_emails",
+                "user_assignment",
+                "user_assignment__email",
+                "user_assignment__lessons_total",
+                "user_assignment__lessons_completed_total",
+                "user_assignment__course",
+                "user_assignment__completed_lessons",
                 "assignments",
                 "assignments__email",
-                "assignments__lessons_completed_total",
                 "assignments__lessons_total",
-                "created_by",
-                "created_by__email",
-                "facilitator_emails",
+                "assignments__lessons_completed_total",
+                "lessons__id",
                 "lessons",
-                "name",
-                "description",
-                "user_assignment",
-                "user_assignment__completed_lessons",
-                "user_assignment__course",
-                "user_assignment__email",
-                "user_assignment__lessons_completed_total",
-                "user_assignment__lessons_total",
             ]
         )
 
@@ -232,6 +234,32 @@ class LookupFinderTests(TestCase):
         with self.assertNumQueries(3):
             course_list = list(optimized_qs)
             assert len(course_list) == 3
+
+    def test_found_lookup_list_for_implicit_related_fields(self):
+        class CourseRelsSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Course
+                virtual_model = VirtualCourse
+                fields = ["id", "created_by", "assignees", "lessons"]
+
+        qs = Course.objects.all()
+        serializer_instance = CourseRelsSerializer(instance=qs, many=True)
+        virtual_model = VirtualCourse()
+
+        lookup_list = LookupFinder(
+            serializer_instance=serializer_instance,
+            virtual_model=virtual_model,
+            block_queries=False,
+        ).recursively_find_lookup_list()
+
+        assert sorted(lookup_list) == sorted(
+            [
+                "id",
+                "created_by__id",
+                "assignees__id",
+                "lessons__id",
+            ]
+        )
 
     def test_ignored_nested_serializer_with_noop(self):
         """
@@ -292,9 +320,9 @@ class LookupFinderTests(TestCase):
         assert sorted(lookup_list) == sorted(
             [
                 "name",
-                "description",
-                "created_by",
+                "created_by__id",
                 "created_by__email",
+                "description",
                 "facilitator_emails",
                 "user_assignment",
                 "user_assignment__email",
@@ -306,6 +334,7 @@ class LookupFinderTests(TestCase):
                 "assignments__email",
                 "assignments__lessons_total",
                 "assignments__lessons_completed_total",
+                "lessons__id",
                 "lessons",
             ]
         )

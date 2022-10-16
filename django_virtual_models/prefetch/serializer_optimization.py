@@ -258,7 +258,7 @@ class LookupFinder:
             block_queries=self.block_queries,
         )
 
-    def _maybe_handle_relational_field(self, field: Field, **kwargs) -> List[str]:
+    def _maybe_handle_related_field(self, field: Field, **kwargs) -> List[str]:
         lookup = None
         if isinstance(field, serializers.PrimaryKeyRelatedField):
             lookup = field.source
@@ -266,9 +266,11 @@ class LookupFinder:
             field.child_relation, serializers.PrimaryKeyRelatedField
         ):
             lookup = field.child_relation.source
+            if lookup == "":
+                lookup = field.field_name
         if lookup is None:
             raise self.CantHandleException
-        return [lookup]
+        return [lookup + "__id"]
 
     def _maybe_handle_field_with_nested_source(self, field: Field, **kwargs) -> List[str]:
         # TODO: Right now, those fields must always be defined in the Virtual Model,
@@ -386,7 +388,7 @@ class LookupFinder:
             self._maybe_handle_property_field,
             self._maybe_handle_model_method_field,
             self._maybe_handle_method_field,
-            self._maybe_handle_relational_field,
+            self._maybe_handle_related_field,
             self._maybe_handle_field_with_nested_source,
             self._maybe_handle_url_field,
             self._maybe_handle_nested_serializer_field,
