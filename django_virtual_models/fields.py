@@ -28,8 +28,8 @@ def _defer_fields(qs: QuerySet, lookup_list: List[str], deferred_fields: List[st
 class BaseVirtualField:
     def __init__(self):
         # These are set up by `.bind()` when the field is declared inside a `VirtualModel`:
-        self.field_name = None
-        self.parent = None
+        self.field_name: Optional[str] = None
+        self.parent: Optional[VirtualModel] = None
 
     def bind(self, field_name, parent):
         """
@@ -42,10 +42,7 @@ class BaseVirtualField:
     def hydrate_queryset(
         self,
         qs: QuerySet,
-        field: str,
         lookup_list: List[str],
-        parent_model_cls: Optional[Type[Model]] = None,
-        parent_virtual_field: Optional[BaseVirtualField] = None,
         user: Optional[Model] = None,
         **kwargs: Any,
     ) -> QuerySet:
@@ -56,10 +53,7 @@ class NoOp(BaseVirtualField):
     def hydrate_queryset(
         self,
         qs: QuerySet,
-        field: str,
         lookup_list: List[str],
-        parent_model_cls: Optional[Type[Model]] = None,
-        parent_virtual_field: Optional[BaseVirtualField] = None,
         user: Optional[Model] = None,
         **kwargs: Any,
     ) -> QuerySet:
@@ -68,32 +62,30 @@ class NoOp(BaseVirtualField):
 
 class Expression(BaseVirtualField):
     def __init__(self, expr: DjangoExpression):
+        super().__init__()
+
         self.expr = expr
 
     def hydrate_queryset(
         self,
         qs: QuerySet,
-        field: str,
         lookup_list: List[str],
-        parent_model_cls: Optional[Type[Model]] = None,
-        parent_virtual_field: Optional[BaseVirtualField] = None,
         user: Optional[Model] = None,
         **kwargs: Any,
     ) -> QuerySet:
-        return qs.annotate(**{field: self.expr})
+        return qs.annotate(**{self.field_name: self.expr})
 
 
 class Annotation(BaseVirtualField):
     def __init__(self, func: Callable[[QuerySet, Any], QuerySet]):
+        super().__init__()
+
         self.func = func
 
     def hydrate_queryset(
         self,
         qs: QuerySet,
-        field: str,
         lookup_list: List[str],
-        parent_model_cls: Optional[Type[Model]] = None,
-        parent_virtual_field: Optional[BaseVirtualField] = None,
         user: Optional[Model] = None,
         **kwargs: Any,
     ) -> QuerySet:
@@ -103,22 +95,21 @@ class Annotation(BaseVirtualField):
 
 class NestedJoin(BaseVirtualField):
     def __init__(self, model_cls: Type[Model]):
+        super().__init__()
+
         self.model_cls: Type[Model] = model_cls
 
     def hydrate_queryset(
         self,
         qs: QuerySet,
-        field: str,
         lookup_list: List[str],
-        parent_model_cls: Optional[Type[Model]] = None,
-        parent_virtual_field: Optional[BaseVirtualField] = None,
         user: Optional[Model] = None,
         **kwargs: Any,
     ) -> QuerySet:
         model_concrete_fields = utils.get_model_concrete_fields(self.model_cls)
         select_related_choices = utils.get_select_related_choices(qs=qs, model_cls=self.model_cls)
 
-        new_qs = qs.select_related(field)
+        new_qs = qs.select_related(self.field_name)
         for k in lookup_list:
             if k in model_concrete_fields:
                 continue
@@ -128,11 +119,11 @@ class NestedJoin(BaseVirtualField):
                 # NOTE: we cannot handle `InvalidLookupException` for 2-level nested lookups,
                 #       here we're handling only the 1st level.
                 raise InvalidLookupException(
-                    f"`{k_one_level}` cannot be used as a lookup for `{field} = {self.__class__.__name__}(...)` "
-                    f"used by `{parent_virtual_field.__class__.__name__}`. "
+                    f"`{k_one_level}` cannot be used as a lookup for `{self.field_name} = {self.__class__.__name__}(...)` "
+                    f"used by `{self.parent.__class__.__name__}`. "
                     f"Choices are {', '.join(select_related_choices) or '(none)'}. "
                 )
-            nested_field = f"{field}__{k}"
+            nested_field = f"{self.field_name}__{k}"
             new_qs = new_qs.select_related(nested_field)
 
         return new_qs
@@ -201,6 +192,8 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
         to_attr: Optional[str] = None,
         **kwargs: Any,
     ):
+        super().__init__()
+
         if manager is None and (not hasattr(self.Meta, "model") or self.Meta.model is None):
             raise InvalidVirtualModelParams("Always provide a `manager` or `Meta.model`")
         if to_attr is not None and lookup is None:
@@ -254,8 +247,6 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
         self,
         qs: QuerySet,
         lookup_list: List[str],
-        field: str = None,
-        parent_virtual_field: Optional[BaseVirtualField] = None,
         user: Optional[Model] = None,
         **kwargs: Any,
     ) -> QuerySet:
@@ -271,10 +262,10 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
             try:
                 f = self.fields[k]
             except KeyError as e:
-                if parent_virtual_field:
+                if self.parent is not None:
                     raise InvalidLookupException(
-                        f"`{k}` not declared in `{field} = {self.__class__.__name__}(...)` "
-                        f"used by `{parent_virtual_field.__class__.__name__}`"
+                        f"`{k}` not declared in `{self.field_name} = {self.__class__.__name__}(...)` "
+                        f"used by `{self.parent.__class__.__name__}`"
                     ) from e
                 else:
                     raise InvalidLookupException(
@@ -287,10 +278,7 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
             ]
             new_qs = f.hydrate_queryset(
                 qs=new_qs,
-                field=k,
                 lookup_list=f_lookup_list,
-                parent_model_cls=self.model_cls,
-                parent_virtual_field=self,
                 user=user,
                 **kwargs,
             )
@@ -300,10 +288,7 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
     def hydrate_queryset(
         self,
         qs: QuerySet,
-        field: str,
         lookup_list: List[str],
-        parent_model_cls: Optional[Type[Model]] = None,
-        parent_virtual_field: Optional[BaseVirtualField] = None,
         user: Optional[Model] = None,
         **kwargs: Any,
     ) -> QuerySet:
@@ -317,16 +302,14 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
         prefetch_queryset = self._hydrate_queryset_with_nested_declared_fields(
             qs=prefetch_queryset,
             lookup_list=new_lookup_list,
-            field=field,
-            parent_virtual_field=parent_virtual_field,
             user=user,
             **kwargs,
         )
 
         # always include the "back reference" field name in the Prefetch's lookup list
         # to avoid N+1s in internal Django prefetch code
-        field_to_prefetch = self.lookup if self.lookup else field
-        field_descriptor = getattr(parent_model_cls, field_to_prefetch)
+        field_to_prefetch = self.lookup if self.lookup else self.field_name
+        field_descriptor = getattr(self.parent.model_cls, field_to_prefetch)
         if type(field_descriptor) == ReverseManyToOneDescriptor:  # don't use isinstance
             back_reference = field_descriptor.rel.field.name
             new_lookup_list.append(back_reference)
@@ -342,7 +325,7 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
         if self.lookup:
             prefetch = Prefetch(self.lookup, queryset=prefetch_queryset, to_attr=self.to_attr)
         else:
-            prefetch = Prefetch(field, queryset=prefetch_queryset)
+            prefetch = Prefetch(self.field_name, queryset=prefetch_queryset)
 
         new_qs = qs.prefetch_related(prefetch)
         # prefeches don't need lookup
@@ -364,8 +347,6 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
         new_qs = self._hydrate_queryset_with_nested_declared_fields(
             qs=qs,
             lookup_list=new_lookup_list,
-            field=None,
-            parent_virtual_field=None,
             user=self.user,
             **kwargs,
         )
