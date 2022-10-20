@@ -220,6 +220,7 @@ class LookupFinderTests(TestCase):
                 "lessons",
             ]
         )
+        assert "settings" not in lookup_list
 
     def test_found_lookup_list_has_no_n_plus_one_queries(self):
         qs = Course.objects.all()
