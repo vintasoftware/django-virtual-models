@@ -65,7 +65,7 @@ class MovieSerializer(serializers.ModelSerializer):
 
 ```
 
-Note that for proper performance and functionality, all nested serializers must have a corresponding `prefetch_related` on the queryset used by `MovieSerializer`. Also, the `nomination_count` field should be `annotate`d on it. Therefore, you'll need to write this complex chain of nested prefetches:
+For good performance and correct functionality, all nested serializers must have a corresponding `prefetch_related` on the queryset used by `MovieSerializer`. Also, the `nomination_count` field should be `annotate`d on it. Therefore, you'll need to write this complex chain of nested prefetches:
 
 ```python
 from django.db.models import Prefetch
@@ -120,21 +120,9 @@ class VirtualMovie(v.VirtualModel):
 
     class Meta:
         model = Movie
-
-qs = VirtualMovie().get_optimized_queryset(
-    Movie.objects.all(),
-    lookup_list=[
-        "directors__awards",
-        "directors__nomination_count",
-    ]
-)
 ```
 
-If, for example, you forget to add the `nomination_count` field on `VirtualPerson`, the following exception will appear when using `MovieSerializer`:
-
-![MissingVirtualModelFieldException exception](https://user-images.githubusercontent.com/397989/193944879-5205d80b-4102-415e-b178-7630a14db5a1.png)
-
-To configure your view and serializer to use Virtual Models, inherit from the proper classes:
+To configure your DRF view and serializer to use Virtual Models, inherit from the proper classes:
 
 ```python
 import django_virtual_models as v
@@ -142,9 +130,32 @@ import django_virtual_models as v
 class MovieSerializer(v.VirtualModelSerializer):
     ...
 
+    class Meta:
+        ...
+        virtual_model = VirtualMovie
+
 class MovieList(v.VirtualModelListAPIView):
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
+    ...
+```
+
+**Then the library will automatically do the right prefetches and annotations for you!**
+
+If, for example, you forget to add the `nomination_count` field on `VirtualPerson`, the following exception will appear when using `MovieSerializer`:
+
+![MissingVirtualModelFieldException exception](https://user-images.githubusercontent.com/397989/193944879-5205d80b-4102-415e-b178-7630a14db5a1.png)
+
+If you aren't using DRF serializers, you hydrate your queryset with *virtual fields* manually:
+
+```python
+qs = VirtualMovie().get_optimized_queryset(
+    Movie.objects.all(),
+    lookup_list=[
+        "directors__awards",
+        "directors__nomination_count",
+    ]
+)
 ```
 
 To learn more, check the [Installation](https://vintasoftware.github.io/django-virtual-models/installation/) and the [Tutorial](https://vintasoftware.github.io/django-virtual-models/tutorial/).
