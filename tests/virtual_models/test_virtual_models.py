@@ -39,9 +39,7 @@ class VirtualCourse(v.VirtualModel):
     small_description = v.Expression(Substr("description", 1, 128))
     created_by = v.NestedJoin(model_cls=User)
     facilitator_emails = v.Expression(SQArrayAgg(F("facilitators__email")))
-    user_assignment = NestedUserAssignment(
-        manager=Assignment.objects, lookup="assignments", to_attr="user_assignment"
-    )
+    user_assignment = NestedUserAssignment(manager=Assignment.objects, lookup="assignments")
     assignments = v.VirtualModel(manager=Assignment.objects)
     noop_field = v.NoOp()
 
@@ -251,8 +249,8 @@ class VirtualModelsTest(TestCase):
             class Meta:
                 model = LiveCourse
 
-        assert list(SimpleVirtualCourse().declared_fields.keys()) == ["small_description"]
-        assert list(SimpleVirtualLiveCourse().declared_fields.keys()) == [
+        assert list(SimpleVirtualCourse().fields.keys()) == ["small_description"]
+        assert list(SimpleVirtualLiveCourse().fields.keys()) == [
             "small_description",
             "year",
         ]

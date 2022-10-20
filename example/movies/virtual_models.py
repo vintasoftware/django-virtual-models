@@ -14,7 +14,7 @@ class VirtualAward(v.VirtualModel):
 
 
 class VirtualPerson(v.VirtualModel):
-    awards = VirtualAward(manager=Nomination.objects, lookup="nominations", to_attr="awards")
+    awards = VirtualAward(manager=Nomination.objects, lookup="nominations")
     nomination_count = v.Annotation(
         lambda qs, **kwargs: qs.annotate(nomination_count=Count("nominations")).distinct()
     )

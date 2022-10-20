@@ -46,9 +46,7 @@ class NestedUserAssignment(NestedAssignment):
 class VirtualCourse(v.VirtualModel):
     created_by = v.NestedJoin(model_cls=User)
     facilitator_emails = v.Expression(SQArrayAgg(F("facilitators__email")))
-    user_assignment = NestedUserAssignment(
-        manager=Assignment.objects, lookup="assignments", to_attr="user_assignment"
-    )
+    user_assignment = NestedUserAssignment(manager=Assignment.objects, lookup="assignments")
     assignments = NestedAssignment(
         manager=Assignment.objects,
     )

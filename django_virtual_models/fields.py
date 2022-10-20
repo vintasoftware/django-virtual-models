@@ -1,6 +1,7 @@
 # pylint: disable=unidiomatic-typecheck, signature-differs, protected-access, useless-suppression
 from __future__ import annotations
 
+import copy
 from collections import OrderedDict
 from functools import cached_property
 from typing import Any, Callable, Dict, List, Optional, Set, Type
@@ -9,6 +10,8 @@ from django.db.models import Model, Prefetch, QuerySet
 from django.db.models.expressions import Expression as DjangoExpression
 from django.db.models.fields.related_descriptors import ReverseManyToOneDescriptor
 from django.db.models.manager import Manager
+
+from rest_framework.utils.serializer_helpers import BindingDict
 
 from . import utils
 from .exceptions import InvalidFieldException, InvalidLookupException, InvalidVirtualModelParams
@@ -23,6 +26,19 @@ def _defer_fields(qs: QuerySet, lookup_list: List[str], deferred_fields: List[st
 
 
 class BaseVirtualField:
+    def __init__(self):
+        # These are set up by `.bind()` when the field is declared inside a `VirtualModel`:
+        self.field_name = None
+        self.parent = None
+
+    def bind(self, field_name, parent):
+        """
+        Initializes the field name and parent for the field instance.
+        Called when a field is declared inside a `VirtualModel`.
+        """
+        self.field_name = field_name
+        self.parent = parent
+
     def hydrate_queryset(
         self,
         qs: QuerySet,
@@ -123,14 +139,13 @@ class NestedJoin(BaseVirtualField):
 
 
 class VirtualModelMetaclass(type):
+    # Based on DRF's SerializerMetaclass code.
     """
     This metaclass sets a dictionary named `declared_fields` on the class.
 
     Any instances of `BaseVirtualField` included as attributes on either the class
     or on any of its superclasses will be include in the
     `declared_fields` dictionary.
-
-    Based on Django REST Framework `SerializerMetaclass`.
     """
 
     @classmethod
@@ -159,20 +174,20 @@ class VirtualModelMetaclass(type):
         base_fields = [
             (visit(name), f)
             for base in bases
-            if hasattr(base, "declared_fields")
-            for name, f in base.declared_fields.items()
+            if hasattr(base, "_declared_fields")
+            for name, f in base._declared_fields.items()
             if name not in known
         ]
 
         return OrderedDict(base_fields + fields)
 
     def __new__(cls, name, bases, attrs):
-        attrs["declared_fields"] = cls._get_declared_fields(bases, attrs)
+        attrs["_declared_fields"] = cls._get_declared_fields(bases, attrs)
         return super().__new__(cls, name, bases, attrs)
 
 
 class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
-    declared_fields: Dict[str, BaseVirtualField]
+    _declared_fields: Dict[str, BaseVirtualField]
 
     class Meta:
         model: Optional[Type[Model]] = None
@@ -188,23 +203,45 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
     ):
         if manager is None and (not hasattr(self.Meta, "model") or self.Meta.model is None):
             raise InvalidVirtualModelParams("Always provide a `manager` or `Meta.model`")
-        if bool(lookup) ^ bool(to_attr):
-            raise InvalidVirtualModelParams(
-                "Always provide `lookup` and `to_attr` together or leave both `None`"
-            )
+        if to_attr is not None and lookup is None:
+            raise InvalidVirtualModelParams("Always provide a `lookup` when providing a `to_attr`")
 
         self.user = user
         self.manager = manager or self.Meta.model._default_manager
         self.model_cls = self.Meta.model or manager.model
         self.lookup = lookup
-        self.to_attr = to_attr
+        self.to_attr = to_attr  # can be `None`, but will receive `field_name` in `bind()`
         self.extra_kwargs = kwargs
+
+    def get_fields(self) -> Dict[str, BaseVirtualField]:
+        """
+        Returns a dictionary of {field_name: field_instance}.
+        """
+        # Based on DRF's Serializer code.
+        return copy.deepcopy(self._declared_fields)
+
+    @cached_property
+    def fields(self) -> Dict[str, BaseVirtualField]:
+        """
+        A dictionary of {field_name: field_instance}.
+        """
+        # Based on DRF's Serializer code.
+        fields = BindingDict(self)
+        for key, value in self.get_fields().items():
+            fields[key] = value
+        return fields
 
     @cached_property
     def deferred_fields(self) -> Set[str]:
         if hasattr(self.Meta, "deferred_fields") and self.Meta.deferred_fields:
             return set(self.Meta.deferred_fields)
         return set()
+
+    def bind(self, field_name, parent):
+        super().bind(field_name, parent)
+
+        if self.lookup is not None and self.to_attr is None:
+            self.to_attr = self.field_name
 
     @cached_property
     def model_concrete_fields(self) -> Set[str]:
@@ -232,7 +269,7 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
 
             # field is not concrete, so handle it
             try:
-                f = self.declared_fields[k]
+                f = self.fields[k]
             except KeyError as e:
                 if parent_virtual_field:
                     raise InvalidLookupException(
@@ -272,7 +309,7 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
     ) -> QuerySet:
         # if lookup_list is empty, consider as full prefetch (all fields, concrete or virtual)
         if not lookup_list:
-            new_lookup_list = list(self.model_concrete_fields) + list(self.declared_fields.keys())
+            new_lookup_list = list(self.model_concrete_fields) + list(self.fields.keys())
         else:
             new_lookup_list = list(lookup_list)
 
@@ -320,7 +357,7 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
     ) -> QuerySet:
         # if lookup_list is empty, consider as full prefetch (all fields, concrete or virtual)
         if not lookup_list:
-            new_lookup_list = list(self.model_concrete_fields) + list(self.declared_fields.keys())
+            new_lookup_list = list(self.model_concrete_fields) + list(self.fields.keys())
         else:
             new_lookup_list = list(lookup_list)
 

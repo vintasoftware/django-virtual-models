@@ -83,10 +83,10 @@ class VirtualModelsExceptionTest(TestCase):
 
             class BadVirtualCourse(VirtualCourse):  # noqa  # pylint: disable=unused-variable
                 user_assignment = v.VirtualModel(
-                    manager=Assignment.objects, lookup="assignments", to_attr=None
+                    manager=Assignment.objects, to_attr="user_assignment_extra"
                 )
 
-        assert "provide `lookup` and `to_attr` together" in str(ctx.exception)
+        assert "Always provide a `lookup` when providing a `to_attr`" in str(ctx.exception)
 
     def test_block_virtual_model_without_meta_model(self):
         with self.assertRaises(InvalidVirtualModelParams) as ctx:

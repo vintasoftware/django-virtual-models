@@ -256,7 +256,6 @@ class VirtualPerson(v.VirtualModel):
     awards = VirtualAward(
         manager=Nomination.objects,
         lookup="nominations",  # <--- the non-filtered relation name
-        to_attr="awards",  # <--- works as Django's Prefetch
     )
 
     class Meta:
@@ -414,7 +413,6 @@ class VirtualPerson(v.VirtualModel):
     awards = VirtualAward(
         manager=Nomination.objects,
         lookup="nominations",
-        to_attr="awards",
     )
 
     class Meta:
@@ -571,7 +569,6 @@ class VirtualPerson(v.VirtualModel):
     awards = VirtualAward(
         manager=Nomination.objects,
         lookup="nominations",
-        to_attr="awards",
     )
     nomination_count = v.Annotation(
         lambda qs, **kwargs: qs.annotate(

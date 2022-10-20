@@ -118,14 +118,14 @@ def _extract_lookups_from_nested_serializer(
             f"because it's a nested serializer on `{parent_serializer_name}`. "
             f"Change from `NestedJoin` to a `VirtualModel` and add `{field_name}` as a field."
         )
-    if field_name not in virtual_model.declared_fields:
+    if field_name not in virtual_model.fields:
         raise MissingVirtualModelFieldException(
             f"`{field_name}` must be defined in `{virtual_model.__class__.__name__}` "
             f"because it's a nested serializer on `{parent_serializer_name}`"
         )
 
     # map nested serializer to virtual_model
-    virtual_model_of_field = virtual_model.declared_fields[field_name]
+    virtual_model_of_field = virtual_model.fields[field_name]
 
     # find nested lookup_list
     lookup_list = LookupFinder(
@@ -327,7 +327,7 @@ class LookupFinder:
 
             friendly_name = utils.get_friendly_field_name(field)
             serializer_name = field.parent.__class__.__name__
-            if k not in virtual_model.declared_fields:
+            if k not in virtual_model.fields:
                 if k in model_property_fields:
                     raise MissingVirtualModelFieldException(
                         f"Property field `{k}` hinted at `{friendly_name}` "
@@ -418,7 +418,7 @@ class LookupFinder:
 
             if f_lookup_list is unassigned:
                 field_name = utils.get_field_name(field)
-                if field_name not in self.virtual_model.declared_fields:
+                if field_name not in self.virtual_model.fields:
                     serializer_name = field.parent.__class__.__name__
                     raise MissingVirtualModelFieldException(
                         f"`{field_name}` used by `{serializer_name}` "
@@ -430,7 +430,7 @@ class LookupFinder:
                         )
                     )
 
-                # include this field because it's available in `virtual_model.declared_fields`
+                # include this field because it's available in `virtual_model.fields`
                 lookup_list.append(field_name)
             elif f_lookup_list is not None and isinstance(f_lookup_list, list):
                 lookup_list.extend(f_lookup_list)
