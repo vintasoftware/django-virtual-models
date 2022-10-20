@@ -204,7 +204,7 @@ class VirtualPerson(v.VirtualModel):  # <--- new virtual model...
         model = Person
 
 class VirtualMovie(v.VirtualModel):
-    directors = VirtualPerson(manager=Person.objects)  # <--- ...nested here
+    directors = VirtualPerson()  # <--- ...nested here
 
     class Meta:
         model = Movie
@@ -254,8 +254,7 @@ class VirtualAward(v.VirtualModel):
 
 class VirtualPerson(v.VirtualModel):
     awards = VirtualAward(
-        manager=Nomination.objects,
-        lookup="nominations",  # <--- the non-filtered relation name
+        lookup="nominations"  # <--- the non-filtered relation name
     )
 
     class Meta:
@@ -410,10 +409,7 @@ It's very common to use `SerializerMethodField` in DRF serializers. If those met
 
 ```python
 class VirtualPerson(v.VirtualModel):
-    awards = VirtualAward(
-        manager=Nomination.objects,
-        lookup="nominations",
-    )
+    awards = VirtualAward(lookup="nominations")
 
     class Meta:
         model = Person
@@ -566,10 +562,7 @@ class VirtualAward(v.VirtualModel):
 
 
 class VirtualPerson(v.VirtualModel):
-    awards = VirtualAward(
-        manager=Nomination.objects,
-        lookup="nominations",
-    )
+    awards = VirtualAward(lookup="nominations")
     nomination_count = v.Annotation(
         lambda qs, **kwargs: qs.annotate(
             nomination_count=Count("nominations")
@@ -581,7 +574,7 @@ class VirtualPerson(v.VirtualModel):
 
 
 class VirtualMovie(v.VirtualModel):
-    directors = VirtualPerson(manager=Person.objects)
+    directors = VirtualPerson()
 
     class Meta:
         model = Movie

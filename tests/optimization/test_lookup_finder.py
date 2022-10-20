@@ -35,6 +35,9 @@ class NestedAssignment(v.VirtualModel):
     )
     completed_lessons = v.VirtualModel(manager=Lesson.objects)
 
+    class Meta:
+        model = Assignment
+
 
 class NestedUserAssignment(NestedAssignment):
     def get_prefetch_queryset(self, user=None, **kwargs):
@@ -42,14 +45,15 @@ class NestedUserAssignment(NestedAssignment):
             return Assignment.objects.none()
         return Assignment.objects.filter(user=user)
 
+    class Meta:
+        model = Assignment
+
 
 class VirtualCourse(v.VirtualModel):
     created_by = v.NestedJoin(model_cls=User)
     facilitator_emails = v.Expression(SQArrayAgg(F("facilitators__email")))
-    user_assignment = NestedUserAssignment(manager=Assignment.objects, lookup="assignments")
-    assignments = NestedAssignment(
-        manager=Assignment.objects,
-    )
+    user_assignment = NestedUserAssignment(lookup="assignments")
+    assignments = NestedAssignment()
     assignees = v.VirtualModel(manager=User.objects)
     lessons = v.VirtualModel(manager=Lesson.objects)
     settings = v.NoOp()

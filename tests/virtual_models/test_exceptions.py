@@ -15,10 +15,13 @@ from .models import Assignment, Course, Lesson
 class NestedLessons(v.VirtualModel):
     small_content = v.Expression(Substr("content", 1, 300))
 
+    class Meta:
+        model = Lesson
+
 
 class VirtualCourse(v.VirtualModel):
     small_description = v.Expression(Substr("description", 1, 128))
-    lessons = NestedLessons(manager=Lesson.objects)
+    lessons = NestedLessons()
 
     class Meta:
         model = Course

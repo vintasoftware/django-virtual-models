@@ -29,6 +29,9 @@ class NestedUserAssignment(v.VirtualModel):
         lambda qs, **kwargs: qs.annotate_lessons_completed_total()
     )
 
+    class Meta:
+        model = Assignment
+
     def get_prefetch_queryset(self, user=None, **kwargs):
         if user is None:
             return Assignment.objects.none()
@@ -39,7 +42,7 @@ class VirtualCourse(v.VirtualModel):
     small_description = v.Expression(Substr("description", 1, 128))
     created_by = v.NestedJoin(model_cls=User)
     facilitator_emails = v.Expression(SQArrayAgg(F("facilitators__email")))
-    user_assignment = NestedUserAssignment(manager=Assignment.objects, lookup="assignments")
+    user_assignment = NestedUserAssignment(lookup="assignments")
     assignments = v.VirtualModel(manager=Assignment.objects)
     noop_field = v.NoOp()
 
@@ -281,7 +284,7 @@ class VirtualModelsTest(TestCase):
                 deferred_fields = ["description", "settings"]
 
         class SimpleVirtualLesson(v.VirtualModel):
-            course = SimpleVirtualCourse(manager=Course.objects)
+            course = SimpleVirtualCourse()
 
             class Meta:
                 model = Lesson
@@ -313,7 +316,7 @@ class VirtualModelsTest(TestCase):
                 deferred_fields = ["user", "user_id"]
 
         class SimpleVirtualUser(v.VirtualModel):
-            assignments = SimpleVirtualAssignment(manager=Assignment.objects)
+            assignments = SimpleVirtualAssignment()
 
             class Meta:
                 model = User
@@ -340,7 +343,7 @@ class VirtualModelsTest(TestCase):
                 deferred_fields = ["description", "settings"]
 
         class SimpleVirtualLesson(v.VirtualModel):
-            course = SimpleVirtualCourse(manager=Course.objects)
+            course = SimpleVirtualCourse()
 
             class Meta:
                 model = Lesson
@@ -370,7 +373,7 @@ class VirtualModelsTest(TestCase):
                 model = Assignment
 
         class SimpleVirtualUser(v.VirtualModel):
-            assignments = SimpleVirtualAssignment(manager=Assignment.objects)
+            assignments = SimpleVirtualAssignment()
 
             class Meta:
                 model = User
