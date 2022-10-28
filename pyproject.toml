@@ -24,6 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
     "django >=3.2",
@@ -112,7 +113,7 @@ testpaths = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = {linux}-py{38,39,310}-django{32,40,41}
+envlist = {linux}-py{38,39,310,311}-django{32,40,41}
 isolated_build = True
 
 [gh-actions]
@@ -120,6 +121,7 @@ python =
     3.8: py38
     3.9: py39
     3.10: py310
+    3.11: py311
 
 [gh-actions:env]
 OS =
