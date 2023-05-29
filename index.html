@@ -375,6 +375,7 @@
 
 <hr />
 <p><strong>Documentation</strong>: <a href="https://vintasoftware.github.io/django-virtual-models/" target="_blank">https://vintasoftware.github.io/django-virtual-models/</a></p>
+<p><strong>Example project</strong>: <a href="https://github.com/vintasoftware/django-virtual-models/tree/main/example" target="_blank">https://github.com/vintasoftware/django-virtual-models/tree/main/example</a></p>
 <p><strong>Source Code</strong>: <a href="https://github.com/vintasoftware/django-virtual-models" target="_blank">https://github.com/vintasoftware/django-virtual-models</a></p>
 <hr />
 <p>Django Virtual Models introduces a new "prefetching layer" to Django codebases that assists developers to express complex read logic without sacrificing maintainability, composability and performance. A Virtual Model allows developers to declare all nesting they need along with all annotations, prefetches, and joins in a single declarative class.</p>
@@ -403,7 +404,7 @@
         <span class="n">model</span> <span class="o">=</span> <span class="n">Movie</span>
         <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;directors&quot;</span><span class="p">]</span>
 </code></pre></div>
-<p>Note that for proper performance and functionality, all nested serializers must have a corresponding <code>prefetch_related</code> on the queryset used by <code>MovieSerializer</code>. Also, the <code>nomination_count</code> field should be <code>annotate</code>d on it. Therefore, you'll need to write this complex chain of nested prefetches:</p>
+<p>For good performance and correct functionality, all nested serializers must have a corresponding <code>prefetch_related</code> on the queryset used by <code>MovieSerializer</code>. Also, the <code>nomination_count</code> field should be <code>annotate</code>d on it. Therefore, you'll need to write this complex chain of nested prefetches:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">Prefetch</span>
 
 <span class="n">awards_qs</span> <span class="o">=</span> <span class="n">Nomination</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">is_winner</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -437,11 +438,7 @@
 
 
 <span class="k">class</span> <span class="nc">VirtualPerson</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModel</span><span class="p">):</span>
-    <span class="n">awards</span> <span class="o">=</span> <span class="n">VirtualAward</span><span class="p">(</span>
-        <span class="n">manager</span><span class="o">=</span><span class="n">Nomination</span><span class="o">.</span><span class="n">objects</span><span class="p">,</span>
-        <span class="n">lookup</span><span class="o">=</span><span class="s2">&quot;nominations&quot;</span><span class="p">,</span>
-        <span class="n">to_attr</span><span class="o">=</span><span class="s2">&quot;awards&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="n">awards</span> <span class="o">=</span> <span class="n">VirtualAward</span><span class="p">(</span><span class="n">lookup</span><span class="o">=</span><span class="s2">&quot;nominations&quot;</span><span class="p">)</span>
     <span class="n">nomination_count</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">Annotation</span><span class="p">(</span>
         <span class="k">lambda</span> <span class="n">qs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">qs</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
             <span class="n">nomination_count</span><span class="o">=</span><span class="n">Count</span><span class="p">(</span><span class="s2">&quot;nominations&quot;</span><span class="p">)</span>
@@ -453,30 +450,37 @@
 
 
 <span class="k">class</span> <span class="nc">VirtualMovie</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModel</span><span class="p">):</span>
-    <span class="n">directors</span> <span class="o">=</span> <span class="n">VirtualPerson</span><span class="p">(</span><span class="n">manager</span><span class="o">=</span><span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="p">)</span>
+    <span class="n">directors</span> <span class="o">=</span> <span class="n">VirtualPerson</span><span class="p">()</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">Movie</span>
+</code></pre></div>
+<p>To configure your DRF view and serializer to use Virtual Models, inherit from the proper classes:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">django_virtual_models</span> <span class="k">as</span> <span class="nn">v</span>
 
-<span class="n">qs</span> <span class="o">=</span> <span class="n">VirtualMovie</span><span class="p">()</span><span class="o">.</span><span class="n">get_optimized_queryset</span><span class="p">(</span>
+<span class="k">class</span> <span class="nc">MovieSerializer</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModelSerializer</span><span class="p">):</span>
+    <span class="o">...</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="o">...</span>
+        <span class="n">virtual_model</span> <span class="o">=</span> <span class="n">VirtualMovie</span>
+
+<span class="k">class</span> <span class="nc">MovieList</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModelListAPIView</span><span class="p">):</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Movie</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">MovieSerializer</span>
+    <span class="o">...</span>
+</code></pre></div>
+<p><strong>Then the library will automatically do the right prefetches and annotations for you!</strong></p>
+<p>If, for example, you forget to add the <code>nomination_count</code> field on <code>VirtualPerson</code>, the following exception will appear when using <code>MovieSerializer</code>:</p>
+<p><img alt="MissingVirtualModelFieldException exception" src="https://user-images.githubusercontent.com/397989/193944879-5205d80b-4102-415e-b178-7630a14db5a1.png" /></p>
+<p>If you aren't using DRF serializers, you hydrate your queryset with <em>virtual fields</em> manually:</p>
+<div class="highlight"><pre><span></span><code><span class="n">qs</span> <span class="o">=</span> <span class="n">VirtualMovie</span><span class="p">()</span><span class="o">.</span><span class="n">get_optimized_queryset</span><span class="p">(</span>
     <span class="n">Movie</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span>
     <span class="n">lookup_list</span><span class="o">=</span><span class="p">[</span>
         <span class="s2">&quot;directors__awards&quot;</span><span class="p">,</span>
         <span class="s2">&quot;directors__nomination_count&quot;</span><span class="p">,</span>
     <span class="p">]</span>
 <span class="p">)</span>
-</code></pre></div>
-<p>If, for example, you forget to add the <code>nomination_count</code> field on <code>VirtualPerson</code>, the following exception will appear when using <code>MovieSerializer</code>:</p>
-<p><img alt="MissingVirtualModelFieldException exception" src="https://user-images.githubusercontent.com/397989/193944879-5205d80b-4102-415e-b178-7630a14db5a1.png" /></p>
-<p>To configure your view and serializer to use Virtual Models, inherit from the proper classes:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">django_virtual_models</span> <span class="k">as</span> <span class="nn">v</span>
-
-<span class="k">class</span> <span class="nc">MovieSerializer</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModelSerializer</span><span class="p">):</span>
-    <span class="o">...</span>
-
-<span class="k">class</span> <span class="nc">MovieList</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModelListAPIView</span><span class="p">):</span>
-    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Movie</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">MovieSerializer</span>
 </code></pre></div>
 <p>To learn more, check the <a href="https://vintasoftware.github.io/django-virtual-models/installation/">Installation</a> and the <a href="https://vintasoftware.github.io/django-virtual-models/tutorial/">Tutorial</a>.
 Or the <a href="https://github.com/vintasoftware/django-virtual-models/tree/main/example">example project</a>.</p>

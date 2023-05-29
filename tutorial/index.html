@@ -361,8 +361,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#using-type-hints-with-prefetchrequired" class="md-nav__link">
-    Using type hints with prefetch.Required
+  <a href="#using-type-hints-with-hintsvirtual" class="md-nav__link">
+    Using type hints with hints.Virtual
   </a>
   
 </li>
@@ -423,6 +423,13 @@
           <li class="md-nav__item">
   <a href="#passing-down-kwargs" class="md-nav__link">
     Passing down **kwargs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-drf-serializer-integration-works" class="md-nav__link">
+    How DRF serializer integration works
   </a>
   
 </li>
@@ -619,8 +626,8 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#using-type-hints-with-prefetchrequired" class="md-nav__link">
-    Using type hints with prefetch.Required
+  <a href="#using-type-hints-with-hintsvirtual" class="md-nav__link">
+    Using type hints with hints.Virtual
   </a>
   
 </li>
@@ -685,6 +692,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#how-drf-serializer-integration-works" class="md-nav__link">
+    How DRF serializer integration works
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -742,7 +756,7 @@
 <p>Due to the way Django (and especially Django REST Framework) projects are structured, read logic is usually far from prefetch and annotation logic, but both are coupled. This coupling results in brittle code that suffers from <a href="https://en.wikiversity.org/wiki/Software_Design/Change_amplification"><em>change amplification</em></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>This section describes the change amplification problem using Django REST Framework as an example, but other API frameworks (and sometimes Django-only codebases) suffer from similar problems because read logic is naturally coupled to prefetch and annotation logic. Please keep reading to check if Django Virtual Models is helpful to you and check the latter sections to learn how to use this library without DRF.</p>
+<p>This section describes the change amplification problem using Django REST Framework as an example, but other API frameworks (and sometimes Django-only codebases) suffer from similar problems because read logic is naturally coupled to prefetch and annotation logic. Please keep reading to check if Django Virtual Models is helpful to you. Then, the <a href="#using-virtual-models-manually">"Using Virtual Models manually"</a> section to learn how to use this library without DRF.</p>
 </div>
 <p>Imagine you have the following DRF serializers:</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">PersonSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="o">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
@@ -778,7 +792,7 @@
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">Person</span>
-        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;nomination_count&quot;</span><span class="p">]</span>
 
 <span class="c1"># ... requires changes here:</span>
 <span class="k">def</span> <span class="nf">queryset_ops_for_MovieSerializer</span><span class="p">(</span><span class="n">qs</span><span class="p">):</span>
@@ -880,7 +894,7 @@
         <span class="n">model</span> <span class="o">=</span> <span class="n">Person</span>
 
 <span class="k">class</span> <span class="nc">VirtualMovie</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModel</span><span class="p">):</span>
-    <span class="n">directors</span> <span class="o">=</span> <span class="n">VirtualPerson</span><span class="p">(</span><span class="n">manager</span><span class="o">=</span><span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="p">)</span>  <span class="c1"># &lt;--- ...nested here</span>
+    <span class="n">directors</span> <span class="o">=</span> <span class="n">VirtualPerson</span><span class="p">()</span>  <span class="c1"># &lt;--- ...nested here</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">Movie</span>
@@ -903,11 +917,11 @@
 <p>Now the view works fine, without any N+1 queries or missing annotations! The <code>VirtualModelListAPIView</code> automatically uses the serializer and its virtual model to get an optimized queryset by overriding the <code>get_queryset</code> method.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>If you override the <code>get_queryset</code> method without calling super, the virtual model integration will not work. Either call <code>super().get_queryset()</code> or use the <code>v.GenericVirtualModelViewMixin</code> in case you have custom base view classes. Check the <a href="https://github.com/vintasoftware/django-virtual-models/blob/main/django_virtual_models/generic_views.py">source code</a> to learn how it works.</p>
+<p>If you override the <code>get_queryset</code> method without calling super, the virtual model integration will not work. Either call <code>super().get_queryset()</code> or use the <code>GenericVirtualModelViewMixin</code> in case you have custom base view classes. Read more about why on section <a href="#how-drf-serializer-integration-works">"How DRF serializer integration works"</a>.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>If you already use a custom serializer class, use the <code>v.VirtualModelSerializerMixin</code>. Check the <a href="https://github.com/vintasoftware/django-virtual-models/blob/main/django_virtual_models/serializers.py">source code</a> to learn how it works.</p>
+<p>If you already use a custom serializer class, use the <code>VirtualModelSerializerMixin</code>. Check the <a href="https://github.com/vintasoftware/django-virtual-models/blob/main/django_virtual_models/serializers.py">source code</a> to learn how it works.</p>
 </div>
 <h3 id="using-filtered-prefetches">Using filtered prefetches<a class="headerlink" href="#using-filtered-prefetches" title="Permanent link">&para;</a></h3>
 <p>If you need to prefetch a relationship with some filtering, you can define a method called <code>get_prefetch_queryset</code> inside the <code>VirtualModel</code>. Suppose we need to fetch only the nominations that a person won (with <code>is_winner=True</code>). It's simple to do that:</p>
@@ -921,9 +935,7 @@
 
 <span class="k">class</span> <span class="nc">VirtualPerson</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModel</span><span class="p">):</span>
     <span class="n">awards</span> <span class="o">=</span> <span class="n">VirtualAward</span><span class="p">(</span>
-        <span class="n">manager</span><span class="o">=</span><span class="n">Nomination</span><span class="o">.</span><span class="n">objects</span><span class="p">,</span>
-        <span class="n">lookup</span><span class="o">=</span><span class="s2">&quot;nominations&quot;</span><span class="p">,</span>  <span class="c1"># &lt;--- the non-filtered relation name</span>
-        <span class="n">to_attr</span><span class="o">=</span><span class="s2">&quot;awards&quot;</span><span class="p">,</span>  <span class="c1"># &lt;--- works as Django&#39;s Prefetch</span>
+        <span class="n">lookup</span><span class="o">=</span><span class="s2">&quot;nominations&quot;</span>  <span class="c1"># &lt;--- the non-filtered relation name</span>
     <span class="p">)</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
@@ -972,7 +984,7 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">Movie</span>
         <span class="n">virtual_model</span> <span class="o">=</span> <span class="n">VirtualMovie</span>
-        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;user_rating&quot;</span><span class="p">]</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;user_rating&quot;</span><span class="p">]</span>
 </code></pre></div>
 <p>But you need to declare <code>user_rating</code> on <code>VirtualMovie</code> and ensure it is fetching the rating for the current user. This is possble with the following code:</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">VirtualMovie</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModel</span><span class="p">):</span>
@@ -981,7 +993,7 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
         <span class="k">lambda</span> <span class="n">qs</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">qs</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
             <span class="n">Subquery</span><span class="p">(</span>
                 <span class="n">UserMovieRating</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
-                    <span class="n">movie_id</span><span class="o">=</span><span class="n">OuterRef</span><span class="p">(</span><span class="s2">&quot;pk&quot;</span><span class="p">),</span>
+                    <span class="n">movie</span><span class="o">=</span><span class="n">OuterRef</span><span class="p">(</span><span class="s2">&quot;pk&quot;</span><span class="p">),</span>
                     <span class="n">user</span><span class="o">=</span><span class="n">user</span>
                 <span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="s2">&quot;rating&quot;</span><span class="p">)[:</span><span class="mi">1</span><span class="p">]</span>
             <span class="p">)</span>
@@ -1019,7 +1031,7 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">Movie</span>
         <span class="n">virtual_model</span> <span class="o">=</span> <span class="n">VirtualMovie</span>
-        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;imdb_rating&quot;</span><span class="p">]</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;imdb_rating&quot;</span><span class="p">]</span>
 </code></pre></div>
 <p>You need to mark <code>imdb_rating</code> as something to be ignored in the <code>VirtualMovie</code>. Use <code>v.NoOp()</code> for that:</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">VirtualMovie</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModel</span><span class="p">):</span>
@@ -1033,11 +1045,7 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
 <h3 id="prefetching-for-method-fields-serializermethodfield">Prefetching for method fields (<code>SerializerMethodField</code>)<a class="headerlink" href="#prefetching-for-method-fields-serializermethodfield" title="Permanent link">&para;</a></h3>
 <p>It's very common to use <code>SerializerMethodField</code> in DRF serializers. If those method fields need some virtual model fields, you need to specify that. Suppose you have the following virtual model and serializer:</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">VirtualPerson</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModel</span><span class="p">):</span>
-    <span class="n">awards</span> <span class="o">=</span> <span class="n">VirtualAward</span><span class="p">(</span>
-        <span class="n">manager</span><span class="o">=</span><span class="n">Nomination</span><span class="o">.</span><span class="n">objects</span><span class="p">,</span>
-        <span class="n">lookup</span><span class="o">=</span><span class="s2">&quot;nominations&quot;</span><span class="p">,</span>
-        <span class="n">to_attr</span><span class="o">=</span><span class="s2">&quot;awards&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="n">awards</span> <span class="o">=</span> <span class="n">VirtualAward</span><span class="p">(</span><span class="n">lookup</span><span class="o">=</span><span class="s2">&quot;nominations&quot;</span><span class="p">)</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">Person</span>
@@ -1055,11 +1063,11 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">awards</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
 </code></pre></div>
 <p>This serializer needs the <code>awards</code> field from <code>VirtualPerson</code> inside <code>get_has_won_any_award</code> method, otherwise it would raise an <code>AttributeError</code> as this is a <em>virtual field</em>. But how to specify that requirement? There are multiple ways of doing this:</p>
-<h4 id="using-type-hints-with-prefetchrequired">Using type hints with <code>prefetch.Required</code><a class="headerlink" href="#using-type-hints-with-prefetchrequired" title="Permanent link">&para;</a></h4>
+<h4 id="using-type-hints-with-hintsvirtual">Using type hints with <code>hints.Virtual</code><a class="headerlink" href="#using-type-hints-with-hintsvirtual" title="Permanent link">&para;</a></h4>
 <p>This library supports special type hints for informing what virtual fields a serializer method needs:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Python &lt; 3.9. For &gt;= 3.9, use `from typing import Annotated`:</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
-<span class="kn">from</span> <span class="nn">django_virtual_models</span> <span class="kn">import</span> <span class="n">prefetch</span>
+<span class="kn">from</span> <span class="nn">django_virtual_models</span> <span class="kn">import</span> <span class="n">hints</span>
 
 <span class="k">class</span> <span class="nc">PersonSerializer</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModelSerializer</span><span class="p">):</span>
     <span class="o">...</span>
@@ -1067,24 +1075,28 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
     <span class="k">def</span> <span class="nf">get_has_won_any_award</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="c1"># Type hint to ensure `awards` here:</span>
-        <span class="n">person</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Person</span><span class="p">,</span> <span class="n">prefetch</span><span class="o">.</span><span class="n">Required</span><span class="p">(</span><span class="s2">&quot;awards&quot;</span><span class="p">)]</span>
+        <span class="n">person</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Person</span><span class="p">,</span> <span class="n">hints</span><span class="o">.</span><span class="n">Virtual</span><span class="p">(</span><span class="s2">&quot;awards&quot;</span><span class="p">)]</span>
     <span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">awards</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
 </code></pre></div>
-<p>Now thanks to <code>prefetch.Required("awards")</code>, this serializer will be able to require the field <code>awards</code> from the virtual model.</p>
+<p>Now thanks to <code>hints.Virtual("awards")</code>, this serializer will be able to require the field <code>awards</code> from the virtual model. If necessary, you can pass multiple fields or even nested lookups: <code>hints.Virtual("awards", "nominations__movie")</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><code>prefetch.Required</code> can be used to ensure the fetching of any <code>deferred_fields</code> a method needs without N+1s.</p>
+<p><code>hints.Virtual</code> can be used to ensure the fetching of any <code>deferred_fields</code> a method needs without N+1s.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a href="https://docs.python.org/3/library/typing.html#typing.Annotated">Annotated</a> is a built-in Python construct that allows us to add custom annotations that don't affect type checking.</p>
 </div>
 <h4 id="using-from_types_of-decorator">Using <code>from_types_of</code> decorator<a class="headerlink" href="#using-from_types_of-decorator" title="Permanent link">&para;</a></h4>
-<p>If your method calls another function, you can add type hints to that function with <code>prefetch.Required</code> and then use the <code>from_types_of</code> decorator:</p>
+<p>If your method calls another function, you can add type hints to that function with <code>hints.Virtual</code> and then use the <code>from_types_of</code> decorator:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Python &lt; 3.9. For &gt;= 3.9, use `from typing import Annotated`:</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
-<span class="kn">from</span> <span class="nn">django_virtual_models</span> <span class="kn">import</span> <span class="n">prefetch</span>
+<span class="kn">from</span> <span class="nn">django_virtual_models</span> <span class="kn">import</span> <span class="n">hints</span>
 
 <span class="k">def</span> <span class="nf">check_person_has_won_any_award</span><span class="p">(</span>
     <span class="c1"># Type hint to ensure `awards` here:</span>
-    <span class="n">person</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Person</span><span class="p">,</span> <span class="n">prefetch</span><span class="o">.</span><span class="n">Required</span><span class="p">(</span><span class="s2">&quot;awards&quot;</span><span class="p">)]</span>
+    <span class="n">person</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Person</span><span class="p">,</span> <span class="n">hints</span><span class="o">.</span><span class="n">Virtual</span><span class="p">(</span><span class="s2">&quot;awards&quot;</span><span class="p">)]</span>
 <span class="p">):</span>
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">awards</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
@@ -1092,25 +1104,25 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
     <span class="o">...</span>
 
     <span class="c1"># Decorator to specify where to find the type hint here:</span>
-    <span class="nd">@prefetch</span><span class="o">.</span><span class="n">hints</span><span class="o">.</span><span class="n">from_types_of</span><span class="p">(</span><span class="n">check_person_has_won_any_award</span><span class="p">,</span> <span class="s2">&quot;person&quot;</span><span class="p">)</span>
+    <span class="nd">@hints</span><span class="o">.</span><span class="n">from_types_of</span><span class="p">(</span><span class="n">check_person_has_won_any_award</span><span class="p">,</span> <span class="s2">&quot;person&quot;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">get_has_won_any_award</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person</span><span class="p">,</span> <span class="n">check_person_has_won_any_award</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">check_person_has_won_any_award</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
 </code></pre></div>
 <p>Note the function <code>check_person_has_won_any_award</code> is received in the decorator and passed to the method as an additional argument. This allow serializer methods to fully delegate their logic to some external helper function. Use that only if you really need that kind of indirection.</p>
 <h4 id="if-you-already-defined-the-field-on-the-virtual-model">If you already defined the field on the virtual model<a class="headerlink" href="#if-you-already-defined-the-field-on-the-virtual-model" title="Permanent link">&para;</a></h4>
 <p>If you have the <code>has_won_any_award</code> field in your virtual model, you can use the <code>defined_on_virtual_model</code> decorator:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django_virtual_models</span> <span class="kn">import</span> <span class="n">prefetch</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django_virtual_models</span> <span class="kn">import</span> <span class="n">hints</span>
 
 <span class="k">class</span> <span class="nc">PersonSerializer</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModelSerializer</span><span class="p">):</span>
     <span class="o">...</span>
 
-    <span class="nd">@prefetch</span><span class="o">.</span><span class="n">hints</span><span class="o">.</span><span class="n">defined_on_virtual_model</span><span class="p">()</span>  <span class="c1"># &lt;--- here</span>
+    <span class="nd">@hints</span><span class="o">.</span><span class="n">defined_on_virtual_model</span><span class="p">()</span>  <span class="c1"># &lt;--- here</span>
     <span class="k">def</span> <span class="nf">get_has_won_any_award</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">person</span><span class="o">.</span><span class="n">has_won_any_award</span>
 </code></pre></div>
 <h4 id="if-you-only-use-concrete-fields">If you only use concrete fields<a class="headerlink" href="#if-you-only-use-concrete-fields" title="Permanent link">&para;</a></h4>
 <p>If your method field only uses concrete fields, in other words, it doesn't depend on any virtual model fields, nor any <code>deferred_fields</code>, you can use the <code>no_deferred_fields</code> decorator:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django_virtual_models</span> <span class="kn">import</span> <span class="n">prefetch</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django_virtual_models</span> <span class="kn">import</span> <span class="n">hints</span>
 
 <span class="k">class</span> <span class="nc">PersonSerializer</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModelSerializer</span><span class="p">):</span>
     <span class="n">name_title_case</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">SerializerMethodField</span><span class="p">()</span>
@@ -1120,24 +1132,24 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
         <span class="n">virtual_model</span> <span class="o">=</span> <span class="n">VirtualPerson</span>
         <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name_title_case&quot;</span><span class="p">]</span>
 
-    <span class="nd">@prefetch</span><span class="o">.</span><span class="n">hints</span><span class="o">.</span><span class="n">no_deferred_fields</span><span class="p">()</span>  <span class="c1"># &lt;--- here</span>
+    <span class="nd">@hints</span><span class="o">.</span><span class="n">no_deferred_fields</span><span class="p">()</span>  <span class="c1"># &lt;--- here</span>
     <span class="k">def</span> <span class="nf">get_name_title_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">person</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
 </code></pre></div>
 <h3 id="prefetching-for-model-properties-and-methods">Prefetching for model properties and methods<a class="headerlink" href="#prefetching-for-model-properties-and-methods" title="Permanent link">&para;</a></h3>
-<p>DRF Serializers can use directly model properties and methods in <code>Meta.fields</code>. If your serializer uses a model property or method, you need to use the same hints described by the previous section "Prefetching for method fields". For example:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django_virtual_models</span> <span class="kn">import</span> <span class="n">prefetch</span>
+<p>DRF Serializers can use directly model properties and methods in <code>Meta.fields</code>. If your serializer uses a model property or method, you need to use the same hints described by the previous section <a href="#prefetching-for-method-fields-serializermethodfield">"Prefetching for method fields"</a>. For example:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">django_virtual_models</span> <span class="kn">import</span> <span class="n">hints</span>
 
 <span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
 
     <span class="nd">@property</span>  <span class="c1"># &lt;--- property must come before</span>
-    <span class="nd">@prefetch</span><span class="o">.</span><span class="n">hints</span><span class="o">.</span><span class="n">no_deferred_fields</span><span class="p">()</span>
+    <span class="nd">@hints</span><span class="o">.</span><span class="n">no_deferred_fields</span><span class="p">()</span>
     <span class="k">def</span> <span class="nf">name_title_case</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
 
     <span class="c1"># method w/o params, DRF supports that too:</span>
-    <span class="k">def</span> <span class="nf">has_won_any_award</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Person</span><span class="p">,</span> <span class="n">prefetch</span><span class="o">.</span><span class="n">Required</span><span class="p">(</span><span class="s2">&quot;awards&quot;</span><span class="p">)]):</span>
+    <span class="k">def</span> <span class="nf">has_won_any_award</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Person</span><span class="p">,</span> <span class="n">hints</span><span class="o">.</span><span class="n">Virtual</span><span class="p">(</span><span class="s2">&quot;awards&quot;</span><span class="p">)]):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">awards</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
 <span class="k">class</span> <span class="nc">PersonSerializer</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModelSerializer</span><span class="p">):</span>
@@ -1159,11 +1171,7 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
 
 
 <span class="k">class</span> <span class="nc">VirtualPerson</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModel</span><span class="p">):</span>
-    <span class="n">awards</span> <span class="o">=</span> <span class="n">VirtualAward</span><span class="p">(</span>
-        <span class="n">manager</span><span class="o">=</span><span class="n">Nomination</span><span class="o">.</span><span class="n">objects</span><span class="p">,</span>
-        <span class="n">lookup</span><span class="o">=</span><span class="s2">&quot;nominations&quot;</span><span class="p">,</span>
-        <span class="n">to_attr</span><span class="o">=</span><span class="s2">&quot;awards&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="n">awards</span> <span class="o">=</span> <span class="n">VirtualAward</span><span class="p">(</span><span class="n">lookup</span><span class="o">=</span><span class="s2">&quot;nominations&quot;</span><span class="p">)</span>
     <span class="n">nomination_count</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">Annotation</span><span class="p">(</span>
         <span class="k">lambda</span> <span class="n">qs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">qs</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
             <span class="n">nomination_count</span><span class="o">=</span><span class="n">Count</span><span class="p">(</span><span class="s2">&quot;nominations&quot;</span><span class="p">)</span>
@@ -1175,7 +1183,7 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
 
 
 <span class="k">class</span> <span class="nc">VirtualMovie</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModel</span><span class="p">):</span>
-    <span class="n">directors</span> <span class="o">=</span> <span class="n">VirtualPerson</span><span class="p">(</span><span class="n">manager</span><span class="o">=</span><span class="n">Person</span><span class="o">.</span><span class="n">objects</span><span class="p">)</span>
+    <span class="n">directors</span> <span class="o">=</span> <span class="n">VirtualPerson</span><span class="p">()</span>
 
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">Movie</span>
@@ -1194,6 +1202,9 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
 <p>If you want to get all virtual fields, pass <code>lookup_list=None</code> or omit the parameter.</p>
 <h3 id="passing-down-kwargs">Passing down <code>**kwargs</code><a class="headerlink" href="#passing-down-kwargs" title="Permanent link">&para;</a></h3>
 <p>The keyword arguments you pass in the virtual model constructor are passed down to <code>v.Annotate</code> and <code>get_prefetch_queryset</code> of all nested virtual models.</p>
+<h3 id="how-drf-serializer-integration-works">How DRF serializer integration works<a class="headerlink" href="#how-drf-serializer-integration-works" title="Permanent link">&para;</a></h3>
+<p>The main logic that connects DRF serializers with Virtual Models is on <code>LookupFinder</code> (<a href="https://github.com/vintasoftware/django-virtual-models/blob/main/django_virtual_models/prefetch/serializer_optimization.py">source code</a>). The <code>LookupFinder</code> automatically discovers what virtual fields are needed and raise exceptions if they're not available in the virtual model associated with the serializer. It has a method called <code>recursively_find_lookup_list</code> that returns a <code>lookup_list</code> to be passed to serializer's virtual model. <code>recursively_find_lookup_list</code> is called on <code>get_queryset</code> from <code>GenericVirtualModelViewMixin</code> (<a href="https://github.com/vintasoftware/django-virtual-models/blob/main/django_virtual_models/generic_views.py">source code</a>).</p>
+<p>If necessary, you can customize this logic in your own view classes.</p>
 
 
 
