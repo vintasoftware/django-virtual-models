@@ -200,8 +200,12 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
             raise InvalidVirtualModelParams("Always provide a `lookup` when providing a `to_attr`")
 
         self.user = user
-        self.manager = manager or self.Meta.model._default_manager
-        self.model_cls = self.Meta.model or manager.model
+        if manager is None:
+            self.manager = self.Meta.model._default_manager
+            self.model_cls = self.Meta.model
+        else:
+            self.manager = manager
+            self.model_cls = manager.model
         self.lookup = lookup
         self.to_attr = to_attr  # can be `None`, but will receive `field_name` in `bind()`
         self.extra_kwargs = kwargs
@@ -328,8 +332,6 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
             prefetch = Prefetch(self.field_name, queryset=prefetch_queryset)
 
         new_qs = qs.prefetch_related(prefetch)
-        # prefeches don't need lookup
-        # (but their internal qs need, see prefetch_queryset above)
         return new_qs
 
     def get_optimized_queryset(
