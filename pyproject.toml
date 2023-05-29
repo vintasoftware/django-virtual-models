@@ -113,7 +113,7 @@ testpaths = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = {linux}-py{38,39,310,311}-django{32,40,41}
+envlist = {linux}-py{38,39,310,311}-django{32,40,41,42}
 isolated_build = True
 
 [gh-actions]
@@ -130,12 +130,14 @@ DJANGO =
     3.2: django32
     4.0: django40
     4.1: django41
+    4.2: django42
 
 [testenv]
 deps =
     django32: django~=3.2
     django40: django~=4.0
     django41: django~=4.1
+    django42: django~=4.2
     .[test]
 commands =
     coverage run -m pytest --basetemp={envtmpdir}
