@@ -6,8 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.6]
 
-- Fix support for custom manager in VirtualModel
-- Separate method for _build_prefetch to allow overrides
+- Fix support for custom manager in `VirtualModel` initialization
+- Separate method for `_build_prefetch` to allow overrides.
 
 ## [0.1.5]
 
