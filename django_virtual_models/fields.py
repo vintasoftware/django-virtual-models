@@ -289,6 +289,12 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
 
         return new_qs
 
+    def _build_prefetch(self, prefetch_queryset: QuerySet):
+        if self.lookup:
+            return Prefetch(self.lookup, queryset=prefetch_queryset, to_attr=self.to_attr)
+        else:
+            return Prefetch(self.field_name, queryset=prefetch_queryset)
+
     def hydrate_queryset(
         self,
         qs: QuerySet,
@@ -325,12 +331,8 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
             deferred_fields=self.deferred_fields,
         )
 
-        # build prefetch with lookups
-        if self.lookup:
-            prefetch = Prefetch(self.lookup, queryset=prefetch_queryset, to_attr=self.to_attr)
-        else:
-            prefetch = Prefetch(self.field_name, queryset=prefetch_queryset)
-
+        # build prefetch object, call prefetch_related
+        prefetch = self._build_prefetch(prefetch_queryset)
         new_qs = qs.prefetch_related(prefetch)
         return new_qs
 
