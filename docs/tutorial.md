@@ -314,8 +314,8 @@ Imagine you have a `UserMovieRating` model that relates users with movies and ha
 
 ```python
 class UserMovieRating(models.Model):
-    user = models.ForeignKey("User")
-    movie = models.ForeignKey("Movie", related_name="ratings")
+    user = models.ForeignKey("User", on_delete=models.CASCADE)
+    movie = models.ForeignKey("Movie", related_name="ratings", on_delete=models.CASCADE)
     rating = models.DecimalField(max_digits=3, decimal_places=1)
 ```
 
@@ -390,12 +390,24 @@ Then, annotate the number of votes in the Virtual Model with the `serializer_con
 class VirtualMovie(v.VirtualModel):
     voting_count = v.Annotation(
         lambda qs, user, serializer_context, **kwargs: qs.annotate(
-            voting_count=Count("ratings", filter=Q(rating=serializer_context['vote_value']))
+            voting_count=Count("ratings", filter=Q(ratings__rating=serializer_context['vote_value']))
         )
     )
 
     class Meta:
         model = Movie
+```
+
+And, to reflect the change, add the new field in `MovieSerializer`:
+
+```python
+class MovieSerializer(v.VirtualModelSerializer):
+    voting_count = serializers.IntegerField()
+
+    class Meta:
+        model = Movie
+        virtual_model = VirtualMovie
+        fields = ["name", "voting_count"]
 ```
 
 Just like the `user` param, `serializer_context` can be used in the `get_prefetch_queryset` method.
