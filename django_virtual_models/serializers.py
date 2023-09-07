@@ -74,7 +74,9 @@ class VirtualModelSerializerMixin:
             "Using virtual models on %(cls_name)s. Finding lookup_list...",
             {"cls_name": cls_name},
         )
-        virtual_model_instance = virtual_model(user=self.get_request_user())
+        virtual_model_instance = virtual_model(
+            user=self.get_request_user(), serializer_context=self.context
+        )
         lookup_list = serializer_optimization.LookupFinder(
             serializer_instance=self,
             virtual_model=virtual_model_instance,
