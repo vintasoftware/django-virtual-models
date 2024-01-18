@@ -368,10 +368,10 @@ class VirtualUserMovieRating(v.VirtualModel):
     An advice: in general, you should avoid returning data relative to the current user in HTTP APIs, as this makes caching very hard or even impossible. Use this only if you really need it, as in a request that's only specific for users like user profile pages. Avoid nesting data related to the current user inside global data. Consider adding an additional request to fetch data relative to the current user, and then "hydrate" the previous request data on the frontend.
 
 
-### Using context of Serializer in Virtual Model
-In the same way that you can get the current user to generate the virtual model fields, it's possible to use any data that the view passes to the serializer by the context.
+### Using Serializer's context
+Similar to how `user` param works, it's possible to use in virtual models any data that the view passes to the serializer by context.
 
-Using the previous example, you might want to get the vote count equal than a specific number that is chosen in the view. To do this, use the serializer context to inform the number selected:
+Using the previous example, suppose you want to get the vote count equal to a specific value that is defined in the view. To do this, use the serializer context:
 
 ```python
 class MovieListView(v.VirtualModelListAPIView):
