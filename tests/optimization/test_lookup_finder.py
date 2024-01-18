@@ -63,6 +63,18 @@ class VirtualCourse(v.VirtualModel):
         deferred_fields = ["description"]
 
 
+class NestedFacilitatorUsers(v.VirtualModel):
+    class Meta:
+        model = User
+
+
+class VirtualLesson(v.VirtualModel):
+    facilitator_users = NestedFacilitatorUsers(lookup="course__facilitators")
+
+    class Meta:
+        model = Lesson
+
+
 class NestedAssignmentSerializer(serializers.ModelSerializer):
     email = serializers.EmailField()
     lessons_total = serializers.IntegerField()
@@ -149,9 +161,31 @@ class CourseSerializer(serializers.ModelSerializer):
             return serializer_cls(obj.user_assignment[0]).data
         return None
 
-    @v.hints.from_types_of(get_lesson_title_list, "course")
+    @hints.from_types_of(get_lesson_title_list, "course")
     def get_lesson_titles(self, course, get_lesson_title_list_helper):
         return get_lesson_title_list_helper(course)
+
+
+class LessonSerializer(serializers.ModelSerializer):
+    facilitator_users = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lesson
+        virtual_model = VirtualLesson
+        fields = [
+            "title",
+            "content",
+            "facilitator_users",
+        ]
+
+    @hints.defined_on_virtual_model()
+    def get_facilitator_users(self, lesson):
+        if hasattr(lesson, "facilitator_users"):
+            return list({u.email for u in lesson.facilitator_users})
+
+        # this won't run because it's defined on virtual model,
+        # but one could add fallback code here:
+        return None
 
 
 class LookupFinderTests(TestCase):
@@ -264,6 +298,21 @@ class LookupFinderTests(TestCase):
             ]
         )
 
+    def test_prefetch_with_nested_lookup(self):
+        qs = Lesson.objects.all()
+        serializer_instance = LessonSerializer(instance=qs, many=True)
+        virtual_model = VirtualLesson()
+
+        lookup_list = LookupFinder(
+            serializer_instance=serializer_instance,
+            virtual_model=virtual_model,
+        ).recursively_find_lookup_list()
+
+        optimized_qs = virtual_model.get_optimized_queryset(qs=qs, lookup_list=lookup_list)
+        with self.assertNumQueries(3):
+            lesson_list = list(optimized_qs)
+            assert len(lesson_list) == 9
+
     def test_ignored_nested_serializer_with_noop(self):
         """
         Sometimes one needs a nested serializer generated dynamically.
@@ -375,7 +424,7 @@ class LookupFinderTests(TestCase):
     @override_settings(DEBUG=True)
     def test_prefetch_hints_block_queries_on_serializer_evaluation(self):
         class BrokenCourseSerializer(CourseSerializer):
-            @v.hints.from_types_of(get_lesson_title_list, "course")
+            @hints.from_types_of(get_lesson_title_list, "course")
             def get_lesson_titles(self, course, get_lesson_title_list_helper):
                 list(course.lessons.order_by("title"))  # new query
 
@@ -398,7 +447,7 @@ class LookupFinderTests(TestCase):
     @override_settings(DEBUG=True)
     def test_prefetch_hints_does_not_block_queries_if_false(self):
         class BrokenCourseSerializer(CourseSerializer):
-            @v.hints.from_types_of(get_lesson_title_list, "course")
+            @hints.from_types_of(get_lesson_title_list, "course")
             def get_lesson_titles(self, course, get_lesson_title_list_helper):
                 list(course.lessons.order_by("title"))  # new query
 

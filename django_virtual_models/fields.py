@@ -319,10 +319,11 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
         # always include the "back reference" field name in the Prefetch's lookup list
         # to avoid N+1s in internal Django prefetch code
         field_to_prefetch = self.lookup if self.lookup else self.field_name
-        field_descriptor = getattr(self.parent.model_cls, field_to_prefetch)
-        if type(field_descriptor) == ReverseManyToOneDescriptor:  # don't use isinstance
-            back_reference = field_descriptor.rel.field.name
-            new_lookup_list.append(back_reference)
+        if "__" not in field_to_prefetch:
+            field_descriptor = getattr(self.parent.model_cls, field_to_prefetch)
+            if type(field_descriptor) == ReverseManyToOneDescriptor:  # don't use isinstance
+                back_reference = field_descriptor.rel.field.name
+                new_lookup_list.append(back_reference)
 
         # defer fields on prefetch_queryset
         prefetch_queryset = _defer_fields(
