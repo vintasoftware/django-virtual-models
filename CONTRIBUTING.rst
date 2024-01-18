@@ -69,7 +69,7 @@ this is how you set up your fork for local development::
 
 4. Install the project and the dev requirements::
 
-    $ pip install -e .[doc,dev,test]
+    $ pip install -e ".[doc,dev,test]"
 
 5. Install pre-commit checks::
 

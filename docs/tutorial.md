@@ -314,8 +314,8 @@ Imagine you have a `UserMovieRating` model that relates users with movies and ha
 
 ```python
 class UserMovieRating(models.Model):
-    user = models.ForeignKey("User")
-    movie = models.ForeignKey("Movie", related_name="ratings")
+    user = models.ForeignKey("User", on_delete=models.CASCADE)
+    movie = models.ForeignKey("Movie", related_name="ratings", on_delete=models.CASCADE)
     rating = models.DecimalField(max_digits=3, decimal_places=1)
 ```
 
@@ -366,6 +366,51 @@ class VirtualUserMovieRating(v.VirtualModel):
 
 !!! warning
     An advice: in general, you should avoid returning data relative to the current user in HTTP APIs, as this makes caching very hard or even impossible. Use this only if you really need it, as in a request that's only specific for users like user profile pages. Avoid nesting data related to the current user inside global data. Consider adding an additional request to fetch data relative to the current user, and then "hydrate" the previous request data on the frontend.
+
+
+### Using Serializer's context
+Similar to how `user` param works, it's possible to use in virtual models any data that the view passes to the serializer by context.
+
+Using the previous example, suppose you want to get the vote count equal to a specific value that is defined in the view. To do this, use the serializer context:
+
+```python
+class MovieListView(v.VirtualModelListAPIView):
+    serializer_class = MovieSerializer
+    queryset = Movie.objects.all()
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        vote_value = 5
+        return {**context, 'vote_value': vote_value}
+```
+
+Then, annotate the number of votes in the Virtual Model with the `serializer_context` param:
+
+```python
+class VirtualMovie(v.VirtualModel):
+    voting_count = v.Annotation(
+        lambda qs, user, serializer_context, **kwargs: qs.annotate(
+            voting_count=Count("ratings", filter=Q(ratings__rating=serializer_context['vote_value']))
+        )
+    )
+
+    class Meta:
+        model = Movie
+```
+
+And, to reflect the change, add the new field in `MovieSerializer`:
+
+```python
+class MovieSerializer(v.VirtualModelSerializer):
+    voting_count = serializers.IntegerField()
+
+    class Meta:
+        model = Movie
+        virtual_model = VirtualMovie
+        fields = ["name", "voting_count"]
+```
+
+Just like the `user` param, `serializer_context` can be used in the `get_prefetch_queryset` method.
 
 ### Ignoring a serializer field
 

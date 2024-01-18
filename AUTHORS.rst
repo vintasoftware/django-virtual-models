@@ -12,4 +12,4 @@ django-virtual-models is maintained by [Vinta Software](https://www.vintasoftwar
 Contributors
 ------------
 
-None yet. Why not be the first?
+* Jackson Alves Sousa (https://github.com/jackson541/)
