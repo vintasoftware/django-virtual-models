@@ -41,7 +41,7 @@ class BaseCourseSerializer(serializers.ModelSerializer):
     def get_lesson_titles_from_method(self, course: Annotated[Course, hints.Virtual("lessons")]):
         ...
 
-    @v.hints.from_types_of(get_lesson_title_list, "course")
+    @hints.from_types_of(get_lesson_title_list, "course")
     def get_lesson_titles_from_function(self, course, get_lesson_title_list_helper):
         ...
 
@@ -166,7 +166,7 @@ class LookupFinderExceptionTest(TestCase):
             ...
 
         class BrokenCourseSerializer(BaseCourseSerializer):
-            @v.hints.from_types_of(get_lesson_title_list, "course")
+            @hints.from_types_of(get_lesson_title_list, "course")
             def get_lesson_titles_from_function(self, course, get_lesson_title_list_helper):
                 ...
 
@@ -189,7 +189,7 @@ class LookupFinderExceptionTest(TestCase):
 
     def test_function_with_wrong_param_name_raises_exception(self):
         class BrokenCourseSerializer(BaseCourseSerializer):
-            @v.hints.from_types_of(
+            @hints.from_types_of(
                 get_lesson_title_list, obj_param_name="course_blabla"  # wrong param name
             )
             def get_lesson_titles_from_function(self, course, get_lesson_title_list_helper):
@@ -219,7 +219,7 @@ class LookupFinderExceptionTest(TestCase):
             ...
 
         class BrokenCourseSerializer(BaseCourseSerializer):
-            @v.hints.from_types_of(get_lesson_title_list, "course")
+            @hints.from_types_of(get_lesson_title_list, "course")
             def get_lesson_titles_from_function(self, course, get_lesson_title_list_helper):
                 ...
 
@@ -244,7 +244,7 @@ class LookupFinderExceptionTest(TestCase):
             ...
 
         class BrokenCourseSerializer(BaseCourseSerializer):
-            @v.hints.from_types_of(get_lesson_title_list, "course")
+            @hints.from_types_of(get_lesson_title_list, "course")
             def get_lesson_titles_from_function(self, course, get_lesson_title_list_helper):
                 ...
 
@@ -276,7 +276,7 @@ class LookupFinderExceptionTest(TestCase):
             ...
 
         class BrokenCourseSerializer(BaseCourseSerializer):
-            @v.hints.from_types_of(get_lesson_title_list, "course")
+            @hints.from_types_of(get_lesson_title_list, "course")
             def get_lesson_titles_from_function(self, course, get_lesson_title_list_helper):
                 ...
 
