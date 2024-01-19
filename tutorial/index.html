@@ -333,6 +333,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#using-serializers-context" class="md-nav__link">
+    Using Serializer's context
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#ignoring-a-serializer-field" class="md-nav__link">
     Ignoring a serializer field
   </a>
@@ -593,6 +600,13 @@
           <li class="md-nav__item">
   <a href="#returning-data-relative-to-the-current-user" class="md-nav__link">
     Returning data relative to the current user
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-serializers-context" class="md-nav__link">
+    Using Serializer's context
   </a>
   
 </li>
@@ -973,8 +987,8 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
 <p>Sometimes it makes sense to include data relative to the current user in the virtual model fields.</p>
 <p>Imagine you have a <code>UserMovieRating</code> model that relates users with movies and has a rating field:</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">UserMovieRating</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s2">&quot;User&quot;</span><span class="p">)</span>
-    <span class="n">movie</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s2">&quot;Movie&quot;</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;ratings&quot;</span><span class="p">)</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s2">&quot;User&quot;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="n">movie</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s2">&quot;Movie&quot;</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s2">&quot;ratings&quot;</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">)</span>
     <span class="n">rating</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DecimalField</span><span class="p">(</span><span class="n">max_digits</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">decimal_places</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </code></pre></div>
 <p>You can add a field for <code>user_rating</code> in a <code>MovieSerializer</code>:</p>
@@ -1016,6 +1030,39 @@ Change from `NestedJoin` to a `VirtualModel` and add `directors` as a field.
 <p class="admonition-title">Warning</p>
 <p>An advice: in general, you should avoid returning data relative to the current user in HTTP APIs, as this makes caching very hard or even impossible. Use this only if you really need it, as in a request that's only specific for users like user profile pages. Avoid nesting data related to the current user inside global data. Consider adding an additional request to fetch data relative to the current user, and then "hydrate" the previous request data on the frontend.</p>
 </div>
+<h3 id="using-serializers-context">Using Serializer's context<a class="headerlink" href="#using-serializers-context" title="Permanent link">&para;</a></h3>
+<p>Similar to how <code>user</code> param works, it's possible to use in virtual models any data that the view passes to the serializer by context.</p>
+<p>Using the previous example, suppose you want to get the vote count equal to a specific value that is defined in the view. To do this, use the serializer context:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">MovieListView</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModelListAPIView</span><span class="p">):</span>
+    <span class="n">serializer_class</span> <span class="o">=</span> <span class="n">MovieSerializer</span>
+    <span class="n">queryset</span> <span class="o">=</span> <span class="n">Movie</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_serializer_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_serializer_context</span><span class="p">()</span>
+        <span class="n">vote_value</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">context</span><span class="p">,</span> <span class="s1">&#39;vote_value&#39;</span><span class="p">:</span> <span class="n">vote_value</span><span class="p">}</span>
+</code></pre></div>
+<p>Then, annotate the number of votes in the Virtual Model with the <code>serializer_context</code> param:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">VirtualMovie</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModel</span><span class="p">):</span>
+    <span class="n">voting_count</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">Annotation</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">qs</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">serializer_context</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">qs</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
+            <span class="n">voting_count</span><span class="o">=</span><span class="n">Count</span><span class="p">(</span><span class="s2">&quot;ratings&quot;</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="n">Q</span><span class="p">(</span><span class="n">ratings__rating</span><span class="o">=</span><span class="n">serializer_context</span><span class="p">[</span><span class="s1">&#39;vote_value&#39;</span><span class="p">]))</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Movie</span>
+</code></pre></div>
+<p>And, to reflect the change, add the new field in <code>MovieSerializer</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">MovieSerializer</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">VirtualModelSerializer</span><span class="p">):</span>
+    <span class="n">voting_count</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Movie</span>
+        <span class="n">virtual_model</span> <span class="o">=</span> <span class="n">VirtualMovie</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;voting_count&quot;</span><span class="p">]</span>
+</code></pre></div>
+<p>Just like the <code>user</code> param, <code>serializer_context</code> can be used in the <code>get_prefetch_queryset</code> method.</p>
 <h3 id="ignoring-a-serializer-field">Ignoring a serializer field<a class="headerlink" href="#ignoring-a-serializer-field" title="Permanent link">&para;</a></h3>
 <p>If you have a serializer field that fetches data from somewhere other than your Django models, you cannot prefetch data for it with a Virtual Model. So you need to make the Virtual Model ignore that field.</p>
 <p>Suppose you have some serializer that fetches data from an external service:</p>
