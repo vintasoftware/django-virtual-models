@@ -180,8 +180,8 @@ class LessonSerializer(serializers.ModelSerializer):
 
     @hints.defined_on_virtual_model()
     def get_facilitator_users(self, lesson):
-        if hasattr(lesson, "facilitator_users"):
-            return list({u.email for u in lesson.facilitator_users})
+        if hasattr(lesson.course, "facilitator_users"):
+            return list({u.email for u in lesson.course.facilitator_users})
 
         # this won't run because it's defined on virtual model,
         # but one could add fallback code here:

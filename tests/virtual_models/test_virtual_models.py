@@ -432,3 +432,23 @@ class VirtualModelsTest(TestCase):
 
             for completed_lesson in completed_lesson_list:
                 assert isinstance(completed_lesson.lesson.course.created_by, User)
+
+    def test_prefetch_with_nested_lookup(self):
+        class VirtualLesson(v.VirtualModel):
+            facilitator_users = v.VirtualModel(manager=User.objects, lookup="course__facilitators")
+
+            class Meta:
+                model = Lesson
+
+        virtual_model = VirtualLesson()
+        qs = Lesson.objects.all()
+        lookup_list = ["facilitator_users"]
+
+        optimized_qs = virtual_model.get_optimized_queryset(qs=qs, lookup_list=lookup_list)
+        with self.assertNumQueries(3):
+            lesson_list = list(optimized_qs)
+            assert len(lesson_list) == 9
+
+            for lesson in lesson_list:
+                for user in lesson.course.facilitator_users:
+                    assert isinstance(user, User)
