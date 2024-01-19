@@ -1,7 +1,7 @@
 """Top-level package for django_virtual_models."""
 import logging
 
-__version__ = "0.1.6"
+__version__ = "0.2.0"
 
 # Good practice: https://docs.python-guide.org/writing/logging/#logging-in-a-library
 logging.getLogger(__name__).addHandler(logging.NullHandler())
