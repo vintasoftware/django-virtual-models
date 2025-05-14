@@ -7,10 +7,20 @@ import inspect
 import time
 import typing
 from contextlib import ContextDecorator, ExitStack
-from distutils.sysconfig import get_python_lib
 
 from django.conf import settings
 from django.db import connection
+
+try:
+    from distutils.sysconfig import get_python_lib
+except ImportError:
+    from sysconfig import get_paths
+
+    def get_python_lib():
+        """
+        Get the path to the Python library directory.
+        """
+        return get_paths()["purelib"]
 
 
 class CapturedQuery(typing.TypedDict):
