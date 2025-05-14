@@ -4,6 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [tool.flit.module]
 name = "django_virtual_models"
+py-typed = true
 
 [project]
 name = "django-virtual-models"

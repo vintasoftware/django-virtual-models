@@ -16,11 +16,17 @@ try:
 except ImportError:
     from sysconfig import get_paths
 
-    def get_python_lib():
+    def get_python_lib(plat_specific=False):
         """
         Get the path to the Python library directory.
+        If plat_specific is True, return platform-specific directory,
+        otherwise return platform-independent directory.
+        To match distutils behavior, return both paths when called without arguments.
         """
-        return get_paths()["purelib"]
+        paths = get_paths()
+        if plat_specific:
+            return paths["platlib"]
+        return [paths["purelib"], paths["platlib"]]
 
 
 class CapturedQuery(typing.TypedDict):
@@ -89,11 +95,15 @@ class native_query_capture(ContextDecorator):  # noqa: N801
         """
         if settings.DEBUG:
             # only calculate stack in DEBUG or TEST mode, to avoid production impact
-            python_library_directory = get_python_lib()
+            python_lib_paths = get_python_lib()
+            # Handle both single string and list return values
+            if isinstance(python_lib_paths, str):
+                python_lib_paths = [python_lib_paths]
+
             stack = [
                 stack
                 for stack in inspect.stack()
-                if not stack.filename.startswith(python_library_directory)
+                if not any(stack.filename.startswith(path) for path in python_lib_paths)
                 and not stack.filename.startswith("/usr/local/lib/")
                 and not stack.filename.endswith("query_capture/capture.py")
             ]
