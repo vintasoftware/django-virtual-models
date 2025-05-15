@@ -4,6 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [tool.flit.module]
 name = "django_virtual_models"
+py-typed = true
 
 [project]
 name = "django-virtual-models"
@@ -21,13 +22,13 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "django >=3.2",
+    "django >=4.2",
     "djangorestframework >=3.13.1",
     "typing-extensions >=4.3.0",
 ]
@@ -57,7 +58,7 @@ test = [
     "model_bakery >=1.11.0,<2.0.0",
 ]
 example = [
-    "django >= 3.2,<4.0",
+    "django >= 4.2,<6.0",
     "pyyaml >= 6.0,<7.0",
 ]
 
@@ -112,31 +113,31 @@ testpaths = [
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = {linux}-py{38,39,310,311}-django{32,40,41,42}
+envlist = {linux}-py{310,311,312,313}-django{42,50,51,52}
 isolated_build = True
 
 [gh-actions]
 python =
-    3.8: py38
-    3.9: py39
     3.10: py310
     3.11: py311
+    3.12: py312
+    3.13: py313
 
 [gh-actions:env]
 OS =
     ubuntu-latest: linux
 DJANGO =
-    3.2: django32
-    4.0: django40
-    4.1: django41
     4.2: django42
+    5.0: django50
+    5.1: django51
+    5.2: django52
 
 [testenv]
 deps =
-    django32: django~=3.2
-    django40: django~=4.0
-    django41: django~=4.1
     django42: django~=4.2
+    django50: django~=5.0
+    django51: django~=5.1
+    django52: django~=5.2
     .[test]
 commands =
     coverage run -m pytest --basetemp={envtmpdir}

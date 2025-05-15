@@ -20,7 +20,7 @@ class PersonDirector(models.Model):
     order = models.PositiveSmallIntegerField()
 
     class Meta:
-        index_together = [("movie", "order")]
+        indexes = [models.Index(fields=["movie", "order"])]
         ordering = ["movie", "order"]
 
 
