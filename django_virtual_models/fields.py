@@ -199,7 +199,7 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
         if to_attr is not None and lookup is None:
             raise InvalidVirtualModelParams("Always provide a `lookup` when providing a `to_attr`")
 
-        self.user = user
+        self._user = user
         if manager is None:
             self.manager = self.Meta.model._default_manager
             self.model_cls = self.Meta.model
@@ -352,7 +352,7 @@ class VirtualModel(BaseVirtualField, metaclass=VirtualModelMetaclass):
         new_qs = self._hydrate_queryset_with_nested_declared_fields(
             qs=qs,
             lookup_list=new_lookup_list,
-            user=self.user,
+            user=self._user,
             **kwargs,
         )
         new_qs = _defer_fields(
